@@ -15,14 +15,22 @@ Milestone 1/
 │   ├── Python Practice Material/     # Core learning materials & cheat sheets
 │   ├── Python Practice Questions and Tests/
 │   │   ├── Questions/                # Problem statements + solutions (OOPS, Pandas, NumPy)
-│   │   └── test/test_runner.py       # Dynamic test runner (10 test cases per question, 170 test assertions)
-│   └── Python Questions Solutions/   # Solution-only scripts categorized by domain
+│   │   └── test/test_runner.py       # Dynamic test runner (10 test cases per question, 200 total test assertions)
+│   ├── Python Questions Solutions/   # Solution-only scripts categorized by domain
+│   └── Extra Questions/              # Extra practice questions with complete solutions & test suites
+│       ├── OOPS/                     # LibraryInventorySystem
+│       ├── Pandas/                   # DeliveryTimeAnalyzer
+│       └── NumPy/                    # MovieRatingAnalyzer
 └── SQL Practice/                     # Relational databases, schemas, queries, and verified solutions
     ├── Queries/                      # Working scratch queries & reference solutions
     │   ├── Practice.sql              # Active practice script
     │   └── Question Solution/        # Tested solution files for all scenario-based questions
     ├── SQL Milestone DB Setup/       # Database creation & seed data scripts
-    └── SQL Practice Questions and Material/ # Curated problem lists and comprehensive reference guides
+    ├── SQL Practice Questions and Material/ # Curated problem lists and comprehensive reference guides
+    └── Extra Questions/              # Extra scenario-based SQL questions & database setups
+        ├── DB Setup/                 # FOOD_DELIVERY_DB and GAMING_PLATFORM_DB scripts
+        ├── 01_most_popular_payment_method.sql
+        └── 02_fastest_score_per_game.sql
 ```
 
 ---
@@ -99,3 +107,22 @@ All setup scripts are located in `SQL Practice/SQL Milestone DB Setup/`:
 - **Date Differences**: `DATEDIFF()` combined with lagged dates for customer order intervals.
 - **Complex Joins & Aggregates**: Multi-table inner/left joins, `GROUP BY`, `HAVING`, and nested subqueries.
 - **Filtering & Conditions**: Single-row subqueries (`MAX`), self-referencing lookups (`IN`), and status-based filtering (`ENUM`).
+
+---
+
+## 🌟 Extra Practice Questions (New)
+
+### Python Extra Questions (`Python Practice/Extra Questions/`)
+1. **OOPs**: `LibraryInventorySystem` — Dictionary-based stock tracking, restocking, quantity updates with `KeyError("Not found")`, and available book listings via explicit loops.
+2. **Pandas**: `DeliveryTimeAnalyzer` — Multi-DataFrame left joins (`merge`), delivery log statistics, restaurant average delivery times, threshold filtering, and slowest delivery area extraction.
+3. **NumPy**: `MovieRatingAnalyzer` — Integer array conversions, array-wide range validation (`np.any`), rating statistics, conditional bonus scaling with clipping, rating categorization, and grade mapping.
+
+*All 3 Python extra questions are integrated into `test_runner.py` with **10 automated unit test cases each** (30 new assertions).*
+
+### SQL Extra Questions (`SQL Practice/Extra Questions/`)
+1. **Most Popular Payment Method** (`01_most_popular_payment_method.sql`):
+   - Database: `FOOD_DELIVERY_DB` (Table: `Payments`)
+   - Uses `COUNT(*)`, `GROUP BY`, and `ORDER BY ... LIMIT 1` without window functions to find the highest-frequency payment method with deterministic alphabetical tie-breaking.
+2. **Fastest Score per Game** (`02_fastest_score_per_game.sql`):
+   - Database: `GAMING_PLATFORM_DB` (Tables: `Games`, `Players`, `Scores`)
+   - Uses `ROW_NUMBER() OVER (PARTITION BY s.game_id ORDER BY s.score DESC, p.player_name ASC)` for unique, deterministic ranking on recorded scores.
