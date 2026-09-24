@@ -44,6 +44,7 @@ test_report.log
 
 # IDE & Editors
 .vscode/
+**/.vscode/
 .idea/
 *.swp
 *.swo
