@@ -106,37 +106,16 @@ QUESTION_REF_MAP = {
 # for your active question so you can build and test your solutions incrementally.
 
 # Example Starter Functions for Q401 (Retail Commerce Operations):
-def define_schema() -> StructType:
-    """Build explicit 13-field schema for commerce.csv."""
-    return StructType([
-        StructField("txn_id", StringType(), True),
-        StructField("order_date", StringType(), True),
-        StructField("customer_id", StringType(), True),
-        StructField("region", StringType(), True),
-        StructField("channel", StringType(), True),
-        StructField("category", StringType(), True),
-        StructField("product_id", StringType(), True),
-        StructField("quantity", IntegerType(), True),
-        StructField("unit_price", DoubleType(), True),
-        StructField("discount_rate", DoubleType(), True),
-        StructField("returned", StringType(), True),
-        StructField("ship_date", StringType(), True),
-        StructField("delivery_date", StringType(), True),
-    ])
+from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql.functions import count, avg, sum, trim
+
+def load_recharge_data(spark: SparkSession, path: str) -> DataFrame:
+    return spark.read.option("header", True).option("inferSchema", True).csv(path)
 
 
-def load_data(spark: SparkSession, path: str, schema: StructType) -> DataFrame:
-    """Load commerce.csv using explicit schema."""
-    return spark.read.option("header", True).schema(schema).csv(path)
+def filter_successful_recharges(df: DataFrame) -> DataFrame:
+    return df.filter(col("recharge_status") == "Success")
 
-
-def parse_dates(df: DataFrame) -> DataFrame:
-    """Convert order_date, ship_date, and delivery_date to DateType."""
-    return (
-        df.withColumn("order_date", to_date(col("order_date")))
-          .withColumn("ship_date", to_date(col("ship_date")))
-          .withColumn("delivery_date", to_date(col("delivery_date")))
-    )
 
 
 # Automatically resolve the active target question:

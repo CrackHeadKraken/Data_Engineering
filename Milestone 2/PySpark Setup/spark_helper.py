@@ -133,7 +133,11 @@ def get_spark_session(app_name: str = "Milestone2_PySpark", master: str = "local
         SparkSession.builder
         .appName(app_name)
         .master(master)
-        .config("spark.sql.shuffle.partitions", "4")
+        .config("spark.sql.shuffle.partitions", "1")
+        .config("spark.default.parallelism", "1")
+        .config("spark.rdd.compress", "false")
+        .config("spark.shuffle.compress", "false")
+        .config("spark.dynamicAllocation.enabled", "false")
         .config("spark.driver.host", "127.0.0.1")
         .config("spark.driver.bindAddress", "127.0.0.1")
         .config("spark.ui.enabled", "false")

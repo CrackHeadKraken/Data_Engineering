@@ -269,19 +269,53 @@ def execute_question_tests(qkey: str, custom_solution_module=None) -> Dict:
     t0 = time.time()
     sub_env = os.environ.copy()
     sub_env["TARGET_QUESTION"] = qkey
-    result = subprocess.run(
-        [PYTHON_EXE, "-m", "pytest", test_file, "-q", "--disable-warnings"],
-        cwd=TESTS_DIR,
-        env=sub_env,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-    )
+
+    stdout_file = os.path.join(TESTS_DIR, "pytest_stdout.tmp")
+    stderr_file = os.path.join(TESTS_DIR, "pytest_stderr.tmp")
+
+    with open(stdout_file, "w", encoding="utf-8") as out_f, open(stderr_file, "w", encoding="utf-8") as err_f:
+        proc = subprocess.Popen(
+            [PYTHON_EXE, "-m", "pytest", test_file, "-q", "--disable-warnings"],
+            cwd=TESTS_DIR,
+            env=sub_env,
+            stdout=out_f,
+            stderr=err_f,
+        )
+
+        seen_lines = set()
+        while proc.poll() is None:
+            if os.path.exists(log_file):
+                try:
+                    with open(log_file, "r", encoding="utf-8", errors="replace") as f:
+                        for line in f:
+                            line_s = line.strip()
+                            if line_s and line_s not in seen_lines:
+                                seen_lines.add(line_s)
+                                if ": PASS" in line_s or "[PASS]" in line_s:
+                                    print(f"\n    {GREEN}✔{RESET} {line_s}", end="", flush=True)
+                                elif ": FAIL" in line_s or "[FAIL]" in line_s:
+                                    print(f"\n    {RED}✘{RESET} {line_s}", end="", flush=True)
+                except Exception:
+                    pass
+            time.sleep(0.2)
+
     duration = time.time() - t0
 
-    stdout = result.stdout or ""
-    stderr = result.stderr or ""
+    # Read captured stdout and stderr
+    stdout = ""
+    stderr = ""
+    try:
+        with open(stdout_file, "r", encoding="utf-8", errors="replace") as f:
+            stdout = f.read()
+        os.remove(stdout_file)
+    except Exception:
+        pass
+    try:
+        with open(stderr_file, "r", encoding="utf-8", errors="replace") as f:
+            stderr = f.read()
+        os.remove(stderr_file)
+    except Exception:
+        pass
 
     # Parse test_report.log if written
     log_text = ""
