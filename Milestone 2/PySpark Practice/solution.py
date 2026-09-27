@@ -120,52 +120,24 @@ def filter_successful_recharges(df: DataFrame) -> DataFrame:
 
 # Automatically resolve the active target question:
 # If set to "AUTO", AST inspects user-defined functions above and matches the right assessment.
+from tester import detect_question_from_source
+detected_key, matched_funcs, _ = detect_question_from_source(source_path=__file__)
+USER_PRACTICE_QUESTION = detected_key if detected_key else (QUESTION if QUESTION != "AUTO" else "Q401")
+
 ACTIVE_RAW = os.environ.get("TARGET_QUESTION", QUESTION).strip().upper()
 if ACTIVE_RAW in ["AUTO", "DETECT", "AUTOMATIC"]:
-    from tester import detect_question_from_source
-    detected_key, matched_funcs, _ = detect_question_from_source(source_path=__file__)
-    ACTIVE_TARGET = detected_key if detected_key else "Q401"
+    ACTIVE_TARGET = USER_PRACTICE_QUESTION
 else:
     ACTIVE_TARGET = ACTIVE_RAW
 
-# Inject reference solution attributes for missing functions (enables incremental practice)
-if ACTIVE_TARGET in QUESTION_REF_MAP:
+# If running an automated test suite across questions other than the user's active practice session
+# (for example, when running 'ALL'), inject reference solution for those other questions:
+if ACTIVE_TARGET in QUESTION_REF_MAP and ACTIVE_TARGET != USER_PRACTICE_QUESTION:
     import importlib
     ref_mod = importlib.import_module(QUESTION_REF_MAP[ACTIVE_TARGET])
     for attr in dir(ref_mod):
-        if not attr.startswith("_") and attr not in globals():
+        if not attr.startswith("_"):
             globals()[attr] = getattr(ref_mod, attr)
-
-
-# ========================================================================================
-# 3. DYNAMIC FALLBACK (Enables incremental practice)
-# ========================================================================================
-def __getattr__(name: str) -> Any:
-    """Delegates any unwritten functions to verified reference solutions for practice."""
-    import importlib
-    # 1. First priority: active question's reference solution
-    active_key = os.environ.get("TARGET_QUESTION", ACTIVE_TARGET).strip().upper()
-    primary_module = QUESTION_REF_MAP.get(active_key)
-    if primary_module:
-        try:
-            mod = importlib.import_module(primary_module)
-            if hasattr(mod, name):
-                return getattr(mod, name)
-        except Exception:
-            pass
-
-    # 2. Check remaining candidate modules
-    for mod_name in QUESTION_REF_MAP.values():
-        if mod_name == primary_module:
-            continue
-        try:
-            mod = importlib.import_module(mod_name)
-            if hasattr(mod, name):
-                return getattr(mod, name)
-        except Exception:
-            pass
-
-    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 
 # ========================================================================================
