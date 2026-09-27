@@ -4,7 +4,7 @@ import ssl
 
 ssl_context = ssl._create_unverified_context()
 
-base_dir = r"c:\Users\Arnav\Desktop\L&T Milestone Prep\Milestone 2\PySpark Setup"
+base_dir = os.path.dirname(os.path.abspath(__file__))
 hadoop_bin = os.path.join(base_dir, "hadoop", "bin")
 jars_dir = os.path.join(base_dir, "jars")
 

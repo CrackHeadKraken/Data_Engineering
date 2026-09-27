@@ -1,0 +1,209 @@
+"""
+========================================================================================
+PySpark Practice Workbench & Automated Solution Tester
+========================================================================================
+WHERE TO WRITE YOUR CODE:
+- Write and practice your PySpark functions directly inside THIS file!
+
+HOW TO TEST YOUR CODE:
+1. Choose which question you want to practice by changing `QUESTION = "..."` below.
+2. Type your function definitions in the "MY PRACTICE WORKBENCH" section.
+3. Click the "▶ Run Python File" button in the top-right corner of VS Code (or press F5).
+4. The test engine will automatically run the test cases for your question and print
+   the live test case log and final scorecard!
+
+AVAILABLE QUESTION OPTIONS:
+  - "Q401"             : Retail Commerce Operations (20 tests)
+  - "Q402"             : Telecom Usage Intelligence (20 tests)
+  - "Q777"             : Clinic Appointment Wait-Time Analytics (9 tests)
+  - "Q1000"            : SmartCity Mobility Mega Assessment (40 tests)
+  - "AIRCRAFT"         : Aircraft Maintenance Compliance Analytics (6 tests)
+  - "FILM"             : Film Production Crew Payment Analytics (6 tests)
+  - "MUSEUM"           : Museum Artifact Catalog Insights (6 tests)
+  - "AGRICULTURE"      : Precision Agriculture Field Inspection (6 tests)
+  - "INSURANCE"        : Insurance Claims & Policy Insights (6 tests)
+  - "TELECOM_RECHARGE" : Telecom Recharge Insights (6 tests)
+  - "ALL"              : Run complete test suite across all 10 questions (120 tests)
+========================================================================================
+"""
+
+import os
+import sys
+from typing import Any, List, Tuple
+
+# Setup project search paths
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+MILESTONE2_DIR = os.path.dirname(CURRENT_DIR)
+SETUP_DIR = os.path.join(MILESTONE2_DIR, "PySpark Setup")
+VENV_PYTHON = os.path.join(SETUP_DIR, ".venv", "Scripts", "python.exe")
+
+# Auto-switch to project virtualenv if running under external/global interpreter
+if os.path.exists(VENV_PYTHON) and os.path.normcase(sys.executable) != os.path.normcase(VENV_PYTHON):
+    import subprocess
+    sys.exit(subprocess.call([VENV_PYTHON] + sys.argv))
+
+QUESTIONS_BASE = os.path.join(MILESTONE2_DIR, "PySpark Practice Questions")
+SOLUTIONS_DIR = os.path.join(QUESTIONS_BASE, "solutions")
+TESTS_DIR = os.path.join(QUESTIONS_BASE, "Tests")
+
+for p in [CURRENT_DIR, SETUP_DIR, QUESTIONS_BASE, SOLUTIONS_DIR, TESTS_DIR]:
+    if p not in sys.path and os.path.exists(p):
+        sys.path.insert(0, p)
+
+from tester import run_tests, QUESTION_REGISTRY
+from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql import functions as F
+from pyspark.sql.functions import (
+    col, lit, when, to_date, datediff, unix_timestamp, from_unixtime,
+    sum as fsum, avg as favg, count, min as fmin, max as fmax, round as fround,
+    trim, concat_ws, date_format, year, month, floor, rank
+)
+from pyspark.sql.types import (
+    StructType, StructField, StringType, IntegerType, DoubleType, DateType
+)
+from pyspark.sql.window import Window
+
+
+# ========================================================================================
+# 1. QUESTION SELECTION
+# ========================================================================================
+# Enter the question code you want to test when clicking "Run Python File":
+# Options:
+#   "AUTO"             : Automatically detect question based on your defined functions!
+#   "Q401"             : Retail Commerce Operations (20 tests)
+#   "Q402"             : Telecom Usage Intelligence (20 tests)
+#   "Q777"             : Clinic Appointment Wait-Time Analytics (9 tests)
+#   "Q1000"            : SmartCity Mobility Mega Assessment (40 tests)
+#   "AIRCRAFT"         : Aircraft Maintenance Compliance Analytics (6 tests)
+#   "FILM"             : Film Production Crew Payment Analytics (6 tests)
+#   "MUSEUM"           : Museum Artifact Catalog Insights (6 tests)
+#   "AGRICULTURE"      : Precision Agriculture Field Inspection (6 tests)
+#   "INSURANCE"        : Insurance Claims & Policy Insights (6 tests)
+#   "TELECOM_RECHARGE" : Telecom Recharge Insights (6 tests)
+#   "ALL"              : Run complete test suite across all 10 questions (120 tests)
+
+QUESTION = "AUTO"
+
+# Question-to-reference solution mapping
+QUESTION_REF_MAP = {
+    "Q401": "solution_Q401",
+    "Q402": "solution_Q402",
+    "Q777": "solution_Q777",
+    "Q1000": "solution_Q1000",
+    "AIRCRAFT": "solution_Aircraft_Maintenance",
+    "FILM": "solution_Film_Crew_Payment",
+    "MUSEUM": "solution_Museum_Artifact",
+    "AGRICULTURE": "solution_Precision_Agriculture",
+    "INSURANCE": "solution_Insurance_Claims",
+    "TELECOM_RECHARGE": "solution_Telecom_Recharge",
+}
+
+# ========================================================================================
+# 2. MY PRACTICE WORKBENCH (Define your functions for the selected question here!)
+# ========================================================================================
+# Write your PySpark functions below. Any function you write here will be tested!
+# If you leave a function undefined, it will gracefully fall back to the reference solution
+# for your active question so you can build and test your solutions incrementally.
+
+# Example Starter Functions for Q401 (Retail Commerce Operations):
+def define_schema() -> StructType:
+    """Build explicit 13-field schema for commerce.csv."""
+    return StructType([
+        StructField("txn_id", StringType(), True),
+        StructField("order_date", StringType(), True),
+        StructField("customer_id", StringType(), True),
+        StructField("region", StringType(), True),
+        StructField("channel", StringType(), True),
+        StructField("category", StringType(), True),
+        StructField("product_id", StringType(), True),
+        StructField("quantity", IntegerType(), True),
+        StructField("unit_price", DoubleType(), True),
+        StructField("discount_rate", DoubleType(), True),
+        StructField("returned", StringType(), True),
+        StructField("ship_date", StringType(), True),
+        StructField("delivery_date", StringType(), True),
+    ])
+
+
+def load_data(spark: SparkSession, path: str, schema: StructType) -> DataFrame:
+    """Load commerce.csv using explicit schema."""
+    return spark.read.option("header", True).schema(schema).csv(path)
+
+
+def parse_dates(df: DataFrame) -> DataFrame:
+    """Convert order_date, ship_date, and delivery_date to DateType."""
+    return (
+        df.withColumn("order_date", to_date(col("order_date")))
+          .withColumn("ship_date", to_date(col("ship_date")))
+          .withColumn("delivery_date", to_date(col("delivery_date")))
+    )
+
+
+# Automatically resolve the active target question:
+# If set to "AUTO", AST inspects user-defined functions above and matches the right assessment.
+ACTIVE_RAW = os.environ.get("TARGET_QUESTION", QUESTION).strip().upper()
+if ACTIVE_RAW in ["AUTO", "DETECT", "AUTOMATIC"]:
+    from tester import detect_question_from_source
+    detected_key, matched_funcs, _ = detect_question_from_source(source_path=__file__)
+    ACTIVE_TARGET = detected_key if detected_key else "Q401"
+else:
+    ACTIVE_TARGET = ACTIVE_RAW
+
+# Inject reference solution attributes for missing functions (enables incremental practice)
+if ACTIVE_TARGET in QUESTION_REF_MAP:
+    import importlib
+    ref_mod = importlib.import_module(QUESTION_REF_MAP[ACTIVE_TARGET])
+    for attr in dir(ref_mod):
+        if not attr.startswith("_") and attr not in globals():
+            globals()[attr] = getattr(ref_mod, attr)
+
+
+# ========================================================================================
+# 3. DYNAMIC FALLBACK (Enables incremental practice)
+# ========================================================================================
+def __getattr__(name: str) -> Any:
+    """Delegates any unwritten functions to verified reference solutions for practice."""
+    import importlib
+    # 1. First priority: active question's reference solution
+    active_key = os.environ.get("TARGET_QUESTION", ACTIVE_TARGET).strip().upper()
+    primary_module = QUESTION_REF_MAP.get(active_key)
+    if primary_module:
+        try:
+            mod = importlib.import_module(primary_module)
+            if hasattr(mod, name):
+                return getattr(mod, name)
+        except Exception:
+            pass
+
+    # 2. Check remaining candidate modules
+    for mod_name in QUESTION_REF_MAP.values():
+        if mod_name == primary_module:
+            continue
+        try:
+            mod = importlib.import_module(mod_name)
+            if hasattr(mod, name):
+                return getattr(mod, name)
+        except Exception:
+            pass
+
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
+
+# ========================================================================================
+# 4. MAIN ENTRY POINT (Executes on "Run Python File" in VS Code)
+# ========================================================================================
+def main():
+    target = sys.argv[1] if len(sys.argv) > 1 else QUESTION
+    print("=" * 72)
+    print("         PySpark Practice - Unified Solution Tester")
+    print("=" * 72)
+    print(f"Target Setting  : {target}")
+    print(f"Active File     : {__file__}")
+    print(f"Python Runtime  : {sys.executable}")
+    
+    # Run tests against active solution
+    run_tests(target=target, custom_solution_module=sys.modules[__name__], source_path=__file__)
+
+
+if __name__ == "__main__":
+    main()
