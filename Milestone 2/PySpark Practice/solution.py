@@ -106,15 +106,78 @@ QUESTION_REF_MAP = {
 # for your active question so you can build and test your solutions incrementally.
 
 # Example Starter Functions for Q401 (Retail Commerce Operations):
-from pyspark.sql import SparkSession, DataFrame
-from pyspark.sql.functions import count, avg, sum, trim
 
-def load_recharge_data(spark: SparkSession, path: str) -> DataFrame:
-    return spark.read.option("header", True).option("inferSchema", True).csv(path)
+### PRACTICE 1
+
+# from pyspark.sql import SparkSession, DataFrame
+# from pyspark.sql.functions import col, avg, sum, trim, count
+
+# def load_recharge_data(spark: SparkSession, path: str) -> DataFrame:
+#     return spark.read.option("header",True).option("inferSchema",True).csv(path)
+
+# def filter_successful_recharges(df: DataFrame) -> DataFrame:
+#     return df.filter(col("recharge_status") == "Success")
+
+# def count_high_value_recharges(df: DataFrame) -> int:
+#     return df.filter(col("recharge_amount").isNotNull() & (col("recharge_amount") >= 500)).count()
 
 
-def filter_successful_recharges(df: DataFrame) -> DataFrame:
-    return df.filter(col("recharge_status") == "Success")
+# def average_recharge_amount(df: DataFrame) -> float:
+#     valid = df.filter(col("recharge_amount").isNotNull())
+#     if valid.count() == 0:
+#         return 0.0
+#     row = valid.agg(avg(col("recharge_amount")).alias("avg_amount")).collect()[0]
+
+#     if row["avg_amount"] == 0:
+#         return 0.0
+#     return float(row["avg_amount"])
+
+# def most_used_payment_mode(df: DataFrame) -> str:
+#     valid = df.filter(col("payment_mode").isNotNull() & (trim(col("payment_mode")) != ""))
+
+#     if valid.count() == 0:
+#         return ""
+
+#     agg_df = (
+#         valid.groupBy("payment_mode")
+#             .agg(count(col("payment_mode")).alias("count"))
+#             .orderBy(col("count").desc(), col("payment_mode").asc())
+#     )
+
+#     row = agg_df.limit(1).collect()
+
+#     if not row:
+#         return ""
+#     return str(row[0]["payment_mode"])
+
+
+### RE-PRACTICE 1 
+
+
+### PRACTICE 2
+
+from pyspark.sql import SparkSession, DataFrame 
+from pyspark.sql.functions import col, avg, sum, count, trim
+
+def load_field_inspections(spark: SparkSession, path: str) -> DataFrame:
+    df = spark.read.option("header",True).option("inferSchema",True).csv(path)
+    return df.withColumn("inspection_date", to_date(col("inspection_date")))
+
+def drop_incomplete_inspections(df: DataFrame) -> DataFrame:
+    return df.dropna(subset = ["inspection_id", "field_id", "moisture_level"])
+
+def fill_missing_inspector(df: DataFrame) -> DataFrame:
+    return df.fillna({"inspector_name" : "Unknown"})
+
+def add_inspection_year_month(df: DataFrame) -> DataFrame:
+    return (
+        df.withColumn("inspection_year", year(col("inspection_date")))
+          .withColumn("inspection_month", month(col("inspection_date")))
+    )
+
+
+def average_moisture_by_crop(df: DataFrame) -> DataFrame:   
+    return df.groupBy("crop_type").agg(avg(col("moisture_level")).alias("avg_moisture"))
 
 
 

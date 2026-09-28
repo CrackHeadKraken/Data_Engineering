@@ -23,7 +23,7 @@ def average_recharge_amount(df: DataFrame) -> float:
     valid = df.filter(col("recharge_amount").isNotNull())
     if valid.count() == 0:
         return 0.0
-    row = valid.agg(favg(col("recharge_amount")).alias("avg_amt")).collect()[0]
+    row = valid.agg(favg(col("recharge_amount")).alias("avg_amt")).collect()[0] # collect returns spark row object which is like a list giving output in this       format ------> row = [Row(payment_mode="UPI", cnt=3)] ****   
     if row["avg_amt"] is None:
         return 0.0
     return float(row["avg_amt"])
