@@ -1,374 +1,220 @@
-# LLD: Q402 Telecom Usage Intelligence
-
-📶 Telecom Usage & Profile Enrichment Analytics — LLD (Q402)
-
-1) Problem Statement
-
-You are given a telecom events dataset (CSV) that tracks user usage and network quality (data, voice, sms, roaming, latency, dropped calls, device, etc.).
-
-You must implement pure PySpark functions to:
-
-Define schema and load telecom usage events
-
-Parse event dates
-
-Create derived KPI columns (total activity, usage score, network risk flags)
-
-Filter and aggregate usage / network metrics by different dimensions (city, plan, device, date)
-
-Return top-N analytics outputs
-
-Additionally, create and join a small inline dataset (profiles + plans) to practice join + null enrichment
-
-Implement two functions using unix_timestamp conversions:
-
-convert event date to epoch seconds
-
-convert epoch seconds back to timestamp
-
-✅ All operations must use Spark transformations (no Python loops for data logic).
-
-2) Input Datasets
-
-A) Main dataset (CSV)
-
-Path: data/telecom_usage.csv
-
-Expected columns (loaded as strings/numbers per schema):
-
-event_id (string)
-
-user_id (string or int depending on schema; must be consistent)
-
-plan (string)
-
-city (string)
-
-event_date (string in yyyy-MM-dd)
-
-data_mb (double)
-
-voice_minutes (double/int)
-
-sms_count (int)
-
-roaming (string flag "Y" / "N")
-
-device_type (string)
-
-dropped_calls (int)
-
-latency_ms (int)
-
-B) Inline join dataset (created inside Spark via createDataFrame)
-
-No CSV files for this piece — must be created inline.
-
-Profiles dataset (inline)
-
-Columns:
-
-user_id (int)
-
-first_name (string)
-
-last_name (string)
-
-full_name (string, may be null)
-
-plan_id (string)
-
-profiles_rows = [
-
-# user_id, first_name, last_name, full_name,        plan_id
-
-(201, "Aarav",   "Iyer",   None,             "P1"),
-
-(202, "Diya",    "Sharma", "Diya Sharma",    "P2"),   # already filled → must remain unchanged
-
-(203, "Kabir",   "Mehta",  None,             "P2"),
-
-(204, "Meera",   "Nair",   None,             "P3"),
-
-(205, "Rohan",   "Singh",  "Rohan S.",       "P3"),   # prefilled (non-standard) must remain unchanged
-
-(206, "Sara",    "Khan",   None,             "P99"),  # plan_id not present → join behavior check
-
-]
-
-Plans dataset (inline)
-
-Columns:
-
-plan_id (string)
-
-plan_name (string)
-
-plans_rows = [
-
-# plan_id, plan_name
-
-("P1", "Basic"),
-
-("P2", "Plus"),
-
-("P3", "Premium"),
-
-]
-
-3) Required Imports (Recommended)
-
-from pyspark.sql import SparkSession, DataFrame
-
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType
-
-from pyspark.sql import functions as F
-
-4) Functions to Implement (27 total)
-
-A) Core Telecom Functions (original set)
-
-1. define_schema() -> StructType
-
-Defines explicit schema for telecom_usage.csv with correct types for all fields (nullable).
-
-2. load_data(spark: SparkSession, path: str, schema: StructType) -> DataFrame
-
-Loads telecom CSV using provided schema and header.
-
-3. parse_event_date(df: DataFrame) -> DataFrame
-
-Converts event_date from string to DateType using to_date.
-
-4. add_total_activity(df: DataFrame) -> DataFrame
-
-Adds:
-
-total_activity = voice_minutes + sms_count
-
-5. add_usage_score(df: DataFrame) -> DataFrame
-
-Adds a usage score column.
-
-Business rule (recommended):
-
-usage_score = data_mb + (voice_minutes * 0.5) + (sms_count * 0.1) (Exact weights may be enforced by tests; follow LLD if provided in your assessment notes.)
-
-6. filter_roaming_events(df: DataFrame) -> DataFrame
-
-Returns only roaming events.
-
-Rule:
-
-roaming flag is "Y" / "N" and "Y" is allowed.
-
-7. top_n_users_by_data(df: DataFrame, n: int) -> DataFrame
-
-Groups by user_id, sums data_mb as total_data_mb, orders desc by total, tie-break by user_id asc, returns top n.
-
-8. avg_latency_by_city(df: DataFrame) -> DataFrame
-
-Groups by city, computes average latency_ms as avg_latency_ms.
-
-9. most_used_plan(df: DataFrame) -> str
-
-Returns the plan name/value that appears most frequently (by count).
-
-Tie-break recommendation:
-
-plan ascending.
-
-10. dropped_call_rate_by_plan(df: DataFrame) -> DataFrame
-
-For each plan compute:
-
-total_calls = count(*)
-
-dropped_total = sum(dropped_calls)
-
-dropped_call_rate = dropped_total / total_calls
-
-Return columns:
-
-plan, dropped_call_rate
-
-11. high_latency_events(df: DataFrame, threshold: int) -> DataFrame
-
-Filters rows where latency_ms > threshold.
-
-12. count_users_per_city(df: DataFrame) -> DataFrame
-
-Counts distinct users per city.
-
-Return columns:
-
-city, user_count
-
-13. daily_data_trend(df: DataFrame) -> DataFrame
-
-Groups by event_date, sums data_mb as daily_data_mb, orders by date asc.
-
-14. top_device_by_usage_score(df: DataFrame) -> str
-
-Compute average or total usage_score per device_type (per LLD/test), return top device type by that metric.
-
-15. list_cities(df: DataFrame) -> list_str
-
-Return sorted list of unique cities:
-
-.select("city").distinct() then collect to Python list.
-
-16. events_in_date_range(df: DataFrame, start: str, end: str) -> DataFrame
-
-Filters where event_date is between start and end inclusive.
-
-Assumption:
-
-event_date already parsed to DateType.
-
-17. flag_network_risk(df: DataFrame, latency_threshold: int, drop_threshold: int) -> DataFrame
-
-Adds boolean (or string) risk flag column.
-
-Recommended logic:
-
-is_risky = (latency_ms > latency_threshold) OR (dropped_calls > drop_threshold)
-
-18. top_n_risky_users(df: DataFrame, n: int) -> DataFrame
-
-From risky rows only (use is_risky == True), group by user_id and count risky events, order desc by risky count, tie-break user_id asc, return top n.
-
-19. avg_data_per_plan(df: DataFrame) -> DataFrame
-
-Group by plan, compute avg(data_mb).
-
-20. get_heaviest_user(df: DataFrame) -> tuple
-
-Returns:
-
-(user_id, total_data_mb) where total_data_mb is the sum of data_mb for that user.
-
-Tie-break:
-
-smallest user_id if totals tie.
-
-B) Added Join + Enrichment + Unix Timestamp Functions (new set)
-
-21. define_profile_schema() -> StructType
-
-Defines schema for inline profiles dataset:
-
-user_id (int)
-
-first_name (string)
-
-last_name (string)
-
-full_name (string, nullable)
-
-plan_id (string)
-
-22. define_plan_schema() -> StructType
-
-Defines schema for inline plans dataset:
-
-plan_id (string)
-
-plan_name (string)
-
-23. load_inline_profile_data(spark: SparkSession, profile_schema: StructType, plan_schema: StructType) -> tuple_df
-
-Creates two DataFrames using inline tuples + schemas:
-
-profiles_df
-
-plans_df
-
-✅ Must use:
-
-spark.createDataFrame(inline_rows, schema=profile_schema)
-
-spark.createDataFrame(inline_rows, schema=plan_schema)
-
-Returns:
-
-(profiles_df, plans_df)
-
-24. join_profile_plan(profiles_df: DataFrame, plans_df: DataFrame) -> DataFrame
-
-Joins profiles with plan lookup on plan_id.
-
-Output should include (recommended):
-
-user_id, first_name, last_name, full_name, plan_id, plan_name
-
-25. enrich_full_name(profile_joined_df: DataFrame) -> DataFrame
-
-Enriches missing full_name.
-
-Rule:
-
-If full_name is null → concat_ws(" ", first_name, last_name)
-
-If not null → keep as-is
-
-Must ensure:
-
-no null values remain in full_name after enrichment
-
-26. add_event_epoch_seconds(df: DataFrame) -> DataFrame
-
-Adds an epoch column using unix_timestamp.
-
-Rule:
-
-event_epoch_seconds = unix_timestamp(event_date) (If event_date is DateType, cast/format as needed.)
-
-Output:
-
-original columns + event_epoch_seconds (long/int)
-
-27. add_event_ts_from_epoch(epoch_df: DataFrame) -> DataFrame
-
-Takes a DataFrame that contains event_epoch_seconds and converts it back to timestamp/datetime column.
-
-Rule:
-
-event_ts = from_unixtime(event_epoch_seconds).cast("timestamp")
-
-Output:
-
-original columns + event_ts
-
-5) Constraints & Rules (Trainee Guidance)
-
-✅ Allowed Spark APIs:
-
-withColumn, filter/where, groupBy, agg, orderBy/sort, join, when, concat_ws, coalesce, unix_timestamp, from_unixtime, to_date
-
-❌ Not allowed:
-
-Hardcoding real dataset outputs
-
-Python loops / list logic to replace Spark transformations
-
-spark.createDataFrame() anywhere except load_inline_profile_data
-
-✅ 'Y'/'N' flags are allowed and are not considered hardcoding.
-
-6) Return Types (as per test_config.json)
-
-Return type may be one of:
-
-DataFrame
-
-tuple_df
-
-list_str
-
-tuple
-
-int, float, str
-
-StructType
-
+# Telecom Usage Intelligence (Q402)
+
+| Field | Detail |
+|---|---|
+| **Domain** | Telecommunications & Network Quality Intelligence |
+| **Difficulty** | Intermediate |
+| **Total Marks** | 20 Marks |
+| **Recommended Duration** | 40–50 Minutes |
+| **Assessment Code** | `Q402` |
+
+---
+
+## 1. Problem Statement
+A cellular telecommunications operator captures network events detailing subscriber usage and call quality parameters across multiple cell towers, mobile devices, and service tiers. You must implement a suite of 20 pure PySpark functions to define schemas, parse timestamps, construct user engagement metrics, isolate network risks (latency spikes and dropped calls), and aggregate city-wide and plan-level key performance indicators.
+
+---
+
+## 2. Dataset Contract
+
+### Telecom Usage Events (`data/telecom_usage.csv`)
+| Column Name | Ingested Data Type | Nullable | Description / Example |
+|---|---|---|---|
+| `event_id` | `StringType` | False | Unique network event identifier (e.g., `EVT_1001`) |
+| `user_id` | `StringType` | True | Subscriber account identifier (e.g., `USR_501`) |
+| `plan` | `StringType` | True | Cellular tariff plan (e.g., `Prepaid_Basic`, `Postpaid_Pro`, `Unlimited`) |
+| `city` | `StringType` | True | Metropolitan service area (e.g., `Mumbai`, `Delhi`, `Bengaluru`) |
+| `event_date` | `StringType` | True | Event occurrence date (`yyyy-MM-dd`) |
+| `data_mb` | `DoubleType` | True | Cellular data consumed in megabytes (e.g., `1240.5`) |
+| `voice_minutes` | `IntegerType` | True | Outgoing and incoming call duration in minutes (e.g., `45`) |
+| `sms_count` | `IntegerType` | True | Short messages transmitted (e.g., `8`) |
+| `roaming` | `StringType` | True | Roaming indicator flag: `"Y"` (roaming), `"N"` (home network) |
+| `device_type` | `StringType` | True | Handset category (e.g., `Smartphone`, `Tablet`, `IoT_Gateway`) |
+| `dropped_calls` | `IntegerType` | True | Abruptly disconnected calls during session (e.g., `0`, `2`) |
+| `latency_ms` | `IntegerType` | True | Round-trip packet latency in milliseconds (e.g., `85`) |
+
+---
+
+## 3. How to Practice & Test
+
+1. Open `Milestone 2/PySpark Practice/solution.py`.
+2. Keep `QUESTION = "AUTO"` or explicitly set `QUESTION = "Q402"`.
+3. Implement your functions under `# 2. MY PRACTICE WORKBENCH`.
+4. Click **▶ Run Python File** in VS Code (or execute `python solution.py`).
+5. The unified test engine will automatically run the 20 test cases in `Tests/test_Q402.py` and output your live scorecard.
+
+---
+
+## 4. Required Functions & Implementation Contract
+
+### Group A: Schema Definition & Ingestion
+
+#### Function 1 — Define Schema
+```python
+def define_schema() -> StructType:
+```
+- **Objective:** Construct an explicit `StructType` containing all 12 columns with the correct data types (`StringType`, `DoubleType`, `IntegerType`), with all fields marked nullable.
+- **Return:** `StructType`.
+
+#### Function 2 — Load Data
+```python
+def load_data(spark: SparkSession, path: str, schema: StructType) -> DataFrame:
+```
+- **Objective:** Load the CSV file from `path` using the defined schema and `header=True`.
+- **Return:** PySpark `DataFrame`.
+
+---
+
+### Group B: Data Cleansing & Activity Scoring
+
+#### Function 3 — Parse Event Date
+```python
+def parse_event_date(df: DataFrame) -> DataFrame:
+```
+- **Objective:** Convert string column `event_date` to `DateType` using `to_date()`.
+- **Return:** Updated `DataFrame`.
+
+#### Function 4 — Add Total Activity
+```python
+def add_total_activity(df: DataFrame) -> DataFrame:
+```
+- **Objective:** Compute total communication interaction count:
+  $$\text{total\_activity} = \text{voice\_minutes} + \text{sms\_count}$$
+- **Return:** `DataFrame` with new column `total_activity`.
+
+#### Function 5 — Add Usage Score
+```python
+def add_usage_score(df: DataFrame) -> DataFrame:
+```
+- **Objective:** Compute weighted composite usage score:
+  $$\text{usage\_score} = \left(\frac{\text{data\_mb}}{100.0}\right) + \text{voice\_minutes} + \text{sms\_count}$$
+- **Return:** `DataFrame` with new column `usage_score`.
+
+---
+
+### Group C: Network Quality & Risk Flagging
+
+#### Function 6 — Filter Roaming Events
+```python
+def filter_roaming_events(df: DataFrame) -> DataFrame:
+```
+- **Objective:** Filter records where `roaming == "Y"`.
+- **Return:** Filtered `DataFrame`.
+
+#### Function 7 — Top N Users by Data
+```python
+def top_n_users_by_data(df: DataFrame, n: int) -> DataFrame:
+```
+- **Objective:** Group by `user_id`, sum `data_mb` as `total_data_mb`, order by `total_data_mb.desc()`, breaking ties with `user_id.asc()`, and limit to $n$ rows.
+- **Return:** `DataFrame` with columns: `user_id`, `total_data_mb`.
+
+#### Function 8 — Average Latency by City
+```python
+def avg_latency_by_city(df: DataFrame) -> DataFrame:
+```
+- **Objective:** Group by `city`, compute average `latency_ms` as `avg_latency`, and order alphabetically by `city.asc()`.
+- **Return:** `DataFrame` with columns: `city`, `avg_latency`.
+
+#### Function 9 — Most Used Plan
+```python
+def most_used_plan(df: DataFrame) -> str:
+```
+- **Objective:** Identify the tariff plan with the highest event volume (tie-breaker: `plan.asc()`).
+- **Return:** Python string containing the plan name (or `""` if empty).
+
+#### Function 10 — Dropped Call Rate by Plan
+```python
+def dropped_call_rate_by_plan(df: DataFrame) -> DataFrame:
+```
+- **Objective:** For each plan, compute:
+  $$\text{drop\_rate} = \frac{\sum(\text{dropped\_calls})}{\text{count}(1)}$$
+  Return columns `plan` and `drop_rate`, sorted alphabetically by `plan`.
+- **Return:** `DataFrame` with columns: `plan`, `drop_rate`.
+
+---
+
+### Group D: City & Device Usage Summaries
+
+#### Function 11 — High Latency Events
+```python
+def high_latency_events(df: DataFrame, threshold: int) -> DataFrame:
+```
+- **Objective:** Filter records where `latency_ms > threshold`.
+- **Return:** Filtered `DataFrame`.
+
+#### Function 12 — Count Users per City
+```python
+def count_users_per_city(df: DataFrame) -> DataFrame:
+```
+- **Objective:** Group by `city`, calculate distinct user count as `user_cnt` via `countDistinct("user_id")`, and sort alphabetically by `city`.
+- **Return:** `DataFrame` with columns: `city`, `user_cnt`.
+
+#### Function 13 — Daily Data Trend
+```python
+def daily_data_trend(df: DataFrame) -> DataFrame:
+```
+- **Objective:** Group by `event_date`, sum `data_mb` as `daily_data_mb`, and sort chronologically by `event_date.asc()`.
+- **Return:** `DataFrame` with columns: `event_date`, `daily_data_mb`.
+
+#### Function 14 — Top Device by Usage Score
+```python
+def top_device_by_usage_score(df: DataFrame) -> Tuple[str, float]:
+```
+- **Objective:** Group by `device_type`, sum `usage_score` as `total_score` (derive `usage_score` if missing), order by `total_score.desc()`, breaking ties with `device_type.asc()`, and return the top handset category.
+- **Return:** Python tuple `(device_type, total_score)`.
+
+#### Function 15 — List Cities
+```python
+def list_cities(df: DataFrame) -> List[str]:
+```
+- **Objective:** Retrieve distinct non-null cities as a sorted Python list of strings.
+- **Return:** Python `List[str]`.
+
+---
+
+### Group E: Risk & Volume Analytics
+
+#### Function 16 — Events in Date Range
+```python
+def events_in_date_range(df: DataFrame, start: str, end: str) -> DataFrame:
+```
+- **Objective:** Filter records where `event_date` falls inclusively between `start` and `end`.
+- **Return:** Filtered `DataFrame`.
+
+#### Function 17 — Flag Network Risk
+```python
+def flag_network_risk(df: DataFrame, latency_threshold: int, drop_threshold: int) -> DataFrame:
+```
+- **Objective:** Add boolean column `is_risky`:
+  $$\text{is\_risky} = (\text{latency\_ms} > \text{latency\_threshold}) \lor (\text{dropped\_calls} > \text{drop\_threshold})$$
+- **Return:** `DataFrame` with new boolean column `is_risky`.
+
+#### Function 18 — Top N Risky Users
+```python
+def top_n_risky_users(df: DataFrame, n: int) -> DataFrame:
+```
+- **Objective:** Filter for risky events (`is_risky == True`), group by `user_id`, count risky occurrences as `risky_events`, order by `risky_events.desc()`, tie-breaking on `user_id.asc()`, and limit to $n$ rows.
+- **Return:** `DataFrame` with columns: `user_id`, `risky_events`.
+
+#### Function 19 — Average Data per Plan
+```python
+def avg_data_per_plan(df: DataFrame) -> DataFrame:
+```
+- **Objective:** Group by `plan`, compute average `data_mb` as `avg_data_mb`, and sort alphabetically by `plan`.
+- **Return:** `DataFrame` with columns: `plan`, `avg_data_mb`.
+
+#### Function 20 — Get Heaviest User
+```python
+def get_heaviest_user(df: DataFrame) -> Tuple[str, float]:
+```
+- **Objective:** Identify the user with the highest cumulative `data_mb` consumed (tie-breaker: `user_id.asc()`).
+- **Return:** Python tuple `(user_id, total_data_mb)`.
+
+---
+
+## 5. Implementation Rules & Constraints
+
+1. **Pure PySpark Transformations:** Use PySpark DataFrame operations (`withColumn`, `filter`, `groupBy`, `agg`, `orderBy`, `countDistinct`, `when`).
+2. **Independent Test Invocations:** Every function is tested independently using pre-built test fixtures.
+3. **Internal Column Derivations:** Functions dependent on computed columns (such as `usage_score` or `is_risky`) should verify and derive them if absent in the input DataFrame.
+4. **Deterministic Tie-Breaking:** Always supply secondary ascending sort order on primary keys or identifiers (`user_id.asc()`, `device_type.asc()`, `plan.asc()`).

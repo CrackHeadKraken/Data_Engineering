@@ -1,82 +1,136 @@
 # Insurance Claims & Policy Insights
 
-**Difficulty:** Medium  
-**Marks:** 20  
-**Recommended Duration:** 20-25 Minutes
-
-## Problem Statement
-You are working as a data engineer for an insurance company. Claims and policy information are stored in separate CSV datasets. Create an explicit schema for claims, load both datasets, join them using `policy_id`, and identify the policy type with the highest approved claim amount.
-
-## Dataset Contract
-### Claims
-**Path:** `data/insurance_claims.csv`
-
-| Column | Required Type during CSV read |
+| Field | Detail |
 |---|---|
-| claim_id | StringType |
-| policy_id | StringType |
-| customer_id | StringType |
-| claim_amount | DoubleType |
-| claim_status | StringType |
-| claim_date | StringType |
+| **Domain** | Insurance & Financial Risk Analytics |
+| **Difficulty** | Medium |
+| **Total Marks** | 20 Marks |
+| **Recommended Duration** | 20–25 Minutes |
+| **Assessment Code** | `INSURANCE` |
 
-`claim_date` must be converted to DateType after loading.
+---
 
-### Policies
-**Path:** `data/insurance_policies.csv`
+## 1. Problem Statement
+An insurance provider stores claims activity and policy contracts across distinct datasets. As a data engineer, your objective is to:
+1. Define an explicit schema for insurance claims transactions.
+2. Load and type-cast claims data, and ingest policy contracts using schema inference.
+3. Perform a relational join to unify claim details with policy plans.
+4. Calculate cumulative approved payouts by policy classification and determine the highest payout policy type.
 
-| Column | Description |
-|---|---|
-| policy_id | Unique policy ID |
-| policy_type | Policy type |
-| region | Policy region |
-| annual_premium | Annual premium amount |
+---
 
-## Required Functions
+## 2. Dataset Contracts
 
-### 1. define_claim_schema
+### A) Claims Records (`data/insurance_claims.csv`)
+| Column Name | Schema Read Type | Transformed Type | Nullable | Description / Example |
+|---|---|---|---|---|
+| `claim_id` | `StringType` | `StringType` | True | Unique claim record ID (e.g., `CLM101`) |
+| `policy_id` | `StringType` | `StringType` | True | Foreign key to policy master |
+| `customer_id` | `StringType` | `StringType` | True | Customer identifier (e.g., `CUST301`) |
+| `claim_amount`| `DoubleType` | `DoubleType` | True | Claimed expense in USD |
+| `claim_status`| `StringType` | `StringType` | True | Status (`Approved`, `Rejected`, `Pending`) |
+| `claim_date` | `StringType` | `DateType` | True | Date filed (`yyyy-MM-dd`) |
+
+### B) Policy Contracts (`data/insurance_policies.csv`)
+| Column Name | Ingested Data Type | Nullable | Description / Example |
+|---|---|---|---|
+| `policy_id` | `StringType` | True | Unique policy identifier (e.g., `POL01`) |
+| `policy_type` | `StringType` | True | Category (e.g., `Health`, `Auto`, `Home`, `Life`) |
+| `region` | `StringType` | True | Coverage region (e.g., `North`, `West`, `South`) |
+| `annual_premium` | `DoubleType` | True | Yearly premium cost |
+
+---
+
+## 3. How to Practice & Test
+
+1. Open `Milestone 2/PySpark Practice/solution.py`.
+2. Keep `QUESTION = "AUTO"` or set `QUESTION = "INSURANCE"`.
+3. Implement your functions under section `# 2. MY PRACTICE WORKBENCH`.
+4. Click **▶ Run Python File** in VS Code (or execute `python solution.py`).
+5. The unified test engine will automatically run the 6 test cases in `Tests/test_Insurance_Claims.py` and display your live scorecard.
+
+---
+
+## 4. Required Functions & Implementation Contract
+
+### Function 1 — Define Claim Schema
 ```python
 def define_claim_schema() -> StructType:
 ```
-Return a StructType with exactly these fields in order: `claim_id`, `policy_id`, `customer_id`, `claim_amount`, `claim_status`, `claim_date`. Types: String, String, String, Double, String, String. All fields may be nullable.
+- **Objective:** Construct and return an explicit `StructType` schema for reading `insurance_claims.csv`.
+- **Field Order & Types:**
+  1. `claim_id`: `StringType`, nullable `True`
+  2. `policy_id`: `StringType`, nullable `True`
+  3. `customer_id`: `StringType`, nullable `True`
+  4. `claim_amount`: `DoubleType`, nullable `True`
+  5. `claim_status`: `StringType`, nullable `True`
+  6. `claim_date`: `StringType`, nullable `True`
+- **Return:** `StructType` containing exactly these 6 fields in this order.
 
-### 2. load_claims_data
+---
+
+### Function 2 — Load Claims Data
 ```python
 def load_claims_data(spark: SparkSession, path: str, schema: StructType) -> DataFrame:
 ```
-Read the claims CSV with header using the supplied schema. Convert `claim_date` to DateType using `yyyy-MM-dd`. The function must use only its supplied parameters and must not call `define_claim_schema`.
+- **Objective:** Load claims records using the supplied schema and convert filing dates.
+- **Transformation Steps:**
+  1. Read CSV at `path` using `header=True` and the supplied `schema`.
+  2. Cast `claim_date` to `DateType` using `to_date(col("claim_date"))`.
+- **Return:** `DataFrame` with `claim_date` typed as `DateType`.
 
-### 3. load_policy_data
+---
+
+### Function 3 — Load Policy Data
 ```python
 def load_policy_data(spark: SparkSession, path: str) -> DataFrame:
 ```
-Read the policy CSV with header and schema inference.
+- **Objective:** Read the policy contracts CSV with schema inference.
+- **Transformation Steps:**
+  1. Read CSV from `path` using `header=True` and `inferSchema=True`.
+- **Return:** Ingested policy `DataFrame`.
 
-### 4. join_claims_with_policies
+---
+
+### Function 4 — Join Claims with Policies
 ```python
 def join_claims_with_policies(claims_df: DataFrame, policies_df: DataFrame) -> DataFrame:
 ```
-Perform an inner join on `policy_id` and return exactly these columns in this order: `claim_id`, `policy_id`, `customer_id`, `claim_amount`, `claim_status`, `claim_date`, `policy_type`, `region`, `annual_premium`.
+- **Objective:** Perform an inner join on `policy_id` and order attributes deterministically.
+- **Transformation Steps:**
+  1. Inner join `claims_df` with `policies_df` matching on `policy_id`.
+  2. Project columns in this exact sequence:
+     ```python
+     [
+         "claim_id", "policy_id", "customer_id", "claim_amount",
+         "claim_status", "claim_date", "policy_type", "region", "annual_premium"
+     ]
+     ```
+- **Return:** Merged `DataFrame` containing the 9 columns in the specified order.
 
-### 5. policy_type_with_highest_approved_claim_amount
+---
+
+### Function 5 — Policy Type with Highest Approved Claim Amount
 ```python
 def policy_type_with_highest_approved_claim_amount(df: DataFrame) -> Tuple[str, float]:
 ```
-Use a pre-joined DataFrame. Keep only `Approved` claims, ignore null/blank policy types and null claim amounts, sum claim amount by policy type, then sort total descending and policy type ascending. Return `(policy_type, total)`; return `("", 0.0)` if no valid approved claims exist.
+- **Objective:** Determine the policy type with the greatest total approved claim expenditure.
+- **Transformation Steps:**
+  1. Filter for valid records:
+     - `claim_status == "Approved"`
+     - `policy_type` is not null and not empty/blank: `trim(col("policy_type")) != ""`
+     - `claim_amount` is not null
+  2. If no matching records exist, return `("", 0.0)`.
+  3. Group by `policy_type` and aggregate `sum(col("claim_amount")).alias("total_claim_amount")`.
+  4. Order by `total_claim_amount` descending, and by `policy_type` ascending as a deterministic tie-breaker.
+  5. Collect the top row and return as a Python tuple `(str(policy_type), float(total_claim_amount))`.
+- **Return:** `Tuple[str, float]` (e.g., `("Health", 87500.0)`).
 
-## Function Independence Rules
-- `load_claims_data` must use only its `spark`, `path`, and `schema` parameters.
-- `join_claims_with_policies` must not call either loader.
-- `policy_type_with_highest_approved_claim_amount` must not call the join function.
-- The evaluator creates its own schemas and DataFrames when testing individual functions.
+---
 
-## Execution Rules
-- Do not create or stop a SparkSession inside `solution.py`.
-- Do not use Python file I/O to load CSV files.
-- Do not hardcode expected business results.
-- `pass` is allowed syntactically; an unimplemented function will fail by behavior.
-- `print()` and `DataFrame.show()` are supported.
-- Debug output does not replace the required computation/return value.
-- Any valid PySpark import style is accepted; no `F` alias is required.
-- Correct alternative PySpark implementations are accepted if behavior matches.
-- `test_report.log` is overwritten on every run.
+## 5. Independence & Assessment Rules
+
+- **Independent Testing:** Each function is evaluated with independent evaluator fixtures. Do not call one student function from another.
+- **SparkSession Lifecycle:** Do not start or terminate SparkSession instances in `solution.py`.
+- **Return Type Precision:** Function 5 must return a standard Python tuple `(str, float)`, not a Spark DataFrame or Row object.
+- **CSV Isolation:** Do not use Python built-in file handlers (`open()`, `csv`, `pandas`) to read assessment files.
