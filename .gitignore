@@ -41,6 +41,8 @@ pyrightconfig.json
 **/.pytest_cache/
 *.log
 test_report.log
+pytest_*.tmp
+*.tmp
 
 # IDE & Editors
 .vscode/
