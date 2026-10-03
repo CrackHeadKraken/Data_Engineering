@@ -45,8 +45,13 @@ if os.path.exists(VENV_PYTHON) and os.path.normcase(sys.executable) != os.path.n
 QUESTIONS_BASE = os.path.join(MILESTONE2_DIR, "PySpark Practice Questions")
 SOLUTIONS_DIR = os.path.join(QUESTIONS_BASE, "solutions")
 TESTS_DIR = os.path.join(QUESTIONS_BASE, "Tests")
+DATA_DIR = os.path.join(QUESTIONS_BASE, "data")
 
-for p in [CURRENT_DIR, SETUP_DIR, QUESTIONS_BASE, SOLUTIONS_DIR, TESTS_DIR]:
+def get_data_path(filename: str) -> str:
+    """Returns the dynamic absolute path for any CSV file in the data folder."""
+    return os.path.join(DATA_DIR, filename)
+
+for p in [CURRENT_DIR, SETUP_DIR, QUESTIONS_BASE, SOLUTIONS_DIR, TESTS_DIR, DATA_DIR]:
     if p not in sys.path and os.path.exists(p):
         sys.path.insert(0, p)
 
@@ -159,8 +164,6 @@ def rank_aircraft_by_maintenance_cost(df: DataFrame) -> DataFrame:
         agg_df.withColumn("maintenance_rank", rank().over(window_spec))
               .select("aircraft_model", "aircraft_id", "total_maintenance_cost", "maintenance_rank")
     )
-
-### Window is a Module consisting a seperate class within it called Window which consist of method PartitionBy hence ### Always import it as "from pyspark.sql.window import Window as w" ###
 
 
 

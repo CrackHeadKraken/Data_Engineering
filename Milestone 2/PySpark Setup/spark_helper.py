@@ -9,13 +9,14 @@ import os
 import sys
 from pathlib import Path
 
-# Base directories - auto-detect PySpark Setup directory
+# Base directories - auto-detect PySpark Setup directory dynamically
 candidate_dirs = [
-    Path(r"c:\Users\Arnav\Desktop\L&T Milestone Prep\Milestone 2\PySpark Setup"),
     Path(__file__).resolve().parent,
-    Path(__file__).resolve().parent.parent.parent.parent
+    Path.cwd() / "Milestone 2" / "PySpark Setup",
+    Path.cwd() / "PySpark Setup",
+    Path.cwd(),
 ]
-SETUP_DIR = Path(r"c:\Users\Arnav\Desktop\L&T Milestone Prep\Milestone 2\PySpark Setup")
+SETUP_DIR = Path(__file__).resolve().parent
 for c in candidate_dirs:
     if (c / "hadoop").exists() and (c / "jars").exists():
         SETUP_DIR = c
@@ -122,7 +123,7 @@ def ensure_mysql_running(host: str = DEFAULT_MYSQL_HOST, port: int = DEFAULT_MYS
     return is_listening()
 
 
-def get_spark_session(app_name: str = "Milestone2_PySpark", master: str = "local[*]", extra_configs: dict = None):
+def get_spark_session(app_name: str = "Milestone2_PySpark", master: str = "local[*]", extra_configs: dict | None = None):
     """
     Creates and returns a preconfigured SparkSession with Java 17, Hadoop winutils,
     and MySQL JDBC driver support.
@@ -211,7 +212,7 @@ def load_mysql_query(
     spark,
     database: str,
     query: str,
-    temp_view_name: str = None,
+    temp_view_name: str | None = None,
     user: str = DEFAULT_MYSQL_USER,
     password: str = DEFAULT_MYSQL_PASSWORD,
     host: str = DEFAULT_MYSQL_HOST,
