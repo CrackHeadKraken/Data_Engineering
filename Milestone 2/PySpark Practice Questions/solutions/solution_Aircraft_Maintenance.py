@@ -24,6 +24,10 @@ def load_maintenance_data(spark: SparkSession, path: str, schema: StructType) ->
     return df.withColumn("maintenance_date", to_date(col("maintenance_date")))
 
 
+def load_aircraft_data(spark: SparkSession, path: str) -> DataFrame:
+    return spark.read.option("header", True).csv(path)
+
+
 def join_aircraft_with_maintenance(aircraft_df: DataFrame, maintenance_df: DataFrame) -> DataFrame:
     return aircraft_df.join(maintenance_df, on="aircraft_id", how="inner")
 

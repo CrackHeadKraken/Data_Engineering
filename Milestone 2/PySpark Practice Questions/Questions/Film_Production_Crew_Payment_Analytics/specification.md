@@ -11,11 +11,12 @@
 ---
 
 ## 1. Problem Statement
-A film production studio manages crew-member profiles separately from disbursement payment records. Your task is to:
+A film production studio manages crew-member profiles separately from disbursement payment records in distinct CSV datasets. Your task is to:
 1. Define an explicit schema for payroll transaction records.
 2. Load and sanitize payment records by imputing missing statuses, eliminating incomplete records, and parsing payment calendar dates.
-3. Combine crew profiles with payment records and isolate crew members with no disbursements.
-4. Rank crew members by total payout within each production department using PySpark Windowing functions.
+3. Ingest crew master profiles from CSV.
+4. Combine crew profiles with payment records and isolate crew members with no disbursements using real dataset files.
+5. Rank crew members by total payout within each production department using PySpark Windowing functions.
 
 ---
 
@@ -24,15 +25,15 @@ A film production studio manages crew-member profiles separately from disburseme
 ### A) Crew Master Data (`data/crew.csv`)
 | Column Name | Data Type | Nullable | Description / Example |
 |---|---|---|---|
-| `crew_id` | `StringType` | True | Unique crew identifier (e.g., `CR101`) |
+| `crew_id` | `StringType` | True | Unique crew identifier (e.g., `C101`) |
 | `crew_name` | `StringType` | True | Full name of the crew member |
-| `department` | `StringType` | True | Production department (e.g., `Camera`, `Sound`, `Lighting`) |
-| `city` | `StringType` | True | Operating city / base |
+| `department` | `StringType` | True | Production department (e.g., `Camera`, `Sound`, `Editing`, `Art`) |
+| `city` | `StringType` | True | Operating city / base (e.g., `Chennai`, `Mumbai`) |
 
 ### B) Payment Transactions (`data/payments.csv`)
 | Column Name | Schema Read Type | Transformed Type | Nullable | Description |
 |---|---|---|---|---|
-| `payment_id` | `StringType` | `StringType` | False (cleaned) | Unique payment transaction ID (e.g., `P801`) |
+| `payment_id` | `StringType` | `StringType` | False (cleaned) | Unique payment transaction ID (e.g., `P001`) |
 | `crew_id` | `StringType` | `StringType` | False (cleaned) | Foreign key referencing `crew.csv` |
 | `payment_date` | `StringType` | `DateType` | True | Date of disbursement (`yyyy-MM-dd`) |
 | `payment_amount` | `DoubleType` | `DoubleType` | False (cleaned) | Payment amount in USD |
@@ -46,7 +47,7 @@ A film production studio manages crew-member profiles separately from disburseme
 2. Keep `QUESTION = "AUTO"` or set `QUESTION = "FILM"`.
 3. Implement your functions under section `# 2. MY PRACTICE WORKBENCH`.
 4. Click **▶ Run Python File** in VS Code (or execute `python solution.py`).
-5. The unified test engine will automatically run the 6 test cases in `Tests/test_Film_Crew_Payment.py` and display your live scorecard.
+5. The unified test engine will automatically run the 6 test cases in `Tests/test_Film_Crew_Payment.py` directly using the CSV datasets and display your live scorecard.
 
 ---
 
@@ -90,7 +91,18 @@ def load_and_clean_payments(spark: SparkSession, path: str, schema: StructType) 
 
 ---
 
-### Function 3 — Join Crew with Payments
+### Function 3 — Load Crew Data
+```python
+def load_crew_data(spark: SparkSession, path: str) -> DataFrame:
+```
+- **Objective:** Ingest the crew member master CSV file.
+- **Transformation Steps:**
+  1. Read the CSV file located at `path` with `header=True` and `inferSchema=True`.
+- **Return:** `DataFrame` containing all 4 crew master columns (`crew_id`, `crew_name`, `department`, `city`).
+
+---
+
+### Function 4 — Join Crew with Payments
 ```python
 def join_crew_with_payments(crew_df: DataFrame, payments_df: DataFrame) -> DataFrame:
 ```
@@ -101,18 +113,18 @@ def join_crew_with_payments(crew_df: DataFrame, payments_df: DataFrame) -> DataF
 
 ---
 
-### Function 4 — Crew Without Payments
+### Function 5 — Crew Without Payments
 ```python
 def crew_without_payments(crew_df: DataFrame, payments_df: DataFrame) -> DataFrame:
 ```
-- **Objective:** Find crew members who have never received any payment transactions.
+- **Objective:** Find crew members who have never received any valid payment transactions.
 - **Transformation Steps:**
   1. Perform a **left-anti join** (`how="left_anti"`) of `crew_df` with `payments_df` matching on `crew_id`.
 - **Return:** `DataFrame` containing only records from `crew_df` absent from `payments_df`.
 
 ---
 
-### Function 5 — Rank Crew by Total Payment
+### Function 6 — Rank Crew by Total Payment
 ```python
 def rank_crew_by_total_payment(df: DataFrame) -> DataFrame:
 ```
@@ -131,6 +143,7 @@ def rank_crew_by_total_payment(df: DataFrame) -> DataFrame:
 
 ## 5. Independence & Assessment Rules
 
+- **Direct CSV Ingestion Practice:** Ingest both CSVs (`crew.csv` and `payments.csv`) directly via their loader functions. Tests run directly on genuine dataset files, bypassing in-memory mock dataframes.
 - **Pure Functions:** Each function must operate exclusively on its input parameters. Do not call sibling student functions directly.
 - **SparkSession Management:** Never call `SparkSession.builder.getOrCreate()` or `spark.stop()` in `solution.py`.
 - **No Python File IO:** Do not read CSV files using Python standard library `open()` or Pandas.

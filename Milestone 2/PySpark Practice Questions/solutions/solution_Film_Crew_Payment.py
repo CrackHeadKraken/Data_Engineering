@@ -31,6 +31,10 @@ def load_and_clean_payments(spark: SparkSession, path: str, schema: StructType) 
     return df
 
 
+def load_crew_data(spark: SparkSession, path: str) -> DataFrame:
+    return spark.read.option("header", True).csv(path)
+
+
 def join_crew_with_payments(crew_df: DataFrame, payments_df: DataFrame) -> DataFrame:
     return crew_df.join(payments_df, on="crew_id", how="inner")
 

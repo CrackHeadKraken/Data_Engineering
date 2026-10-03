@@ -11,32 +11,37 @@
 ---
 
 ## 1. Problem Statement
-An aviation maintenance organization manages aircraft fleet data and maintenance inspection logs in separate datasets. As a data engineer, your objective is to:
+
+An aviation maintenance organization manages aircraft fleet data and maintenance inspection logs in separate CSV datasets. As a data engineer, your objective is to:
+
 1. Define an explicit schema for maintenance event logs.
-2. Ingest and parse inspection records with proper date typing.
-3. Perform relational operations to merge active records and identify aircraft without any maintenance history.
-4. Apply PySpark Window functions to compute cumulative maintenance expenses and assign cost ranks within each aircraft model category.
+2. Ingest maintenance records with proper date typing.
+3. Ingest aircraft fleet records from CSV.
+4. Perform relational join operations to merge active records and identify aircraft without any maintenance history using real dataset files.
+5. Apply PySpark Window functions to compute cumulative maintenance expenses and assign cost ranks within each aircraft model category.
 
 ---
 
 ## 2. Dataset Contracts
 
 ### A) Aircraft Fleet Master (`data/aircraft.csv`)
+
 | Column Name | Data Type | Nullable | Description / Example |
 |---|---|---|---|
 | `aircraft_id` | `StringType` | True | Unique aircraft identifier (e.g., `AC101`) |
-| `aircraft_model` | `StringType` | True | Model family (e.g., `Boeing 737`, `Airbus A320`) |
-| `base_airport` | `StringType` | True | IATA airport code of home base (e.g., `JFK`, `ORD`) |
+| `aircraft_model` | `StringType` | True | Model family (e.g., `A320`, `B737`, `A321`) |
+| `base_airport` | `StringType` | True | IATA airport code of home base (e.g., `Chennai`, `Delhi`) |
 | `service_status` | `StringType` | True | Operational status (e.g., `Active`, `Grounded`) |
 
 ### B) Maintenance Records (`data/maintenance.csv`)
+
 | Column Name | Schema Type (during read) | Final Ingested Type | Nullable | Description |
 |---|---|---|---|---|
-| `maintenance_id` | `StringType` | `StringType` | True | Unique maintenance event ID (e.g., `M501`) |
+| `maintenance_id` | `StringType` | `StringType` | True | Unique maintenance event ID (e.g., `M001`) |
 | `aircraft_id` | `StringType` | `StringType` | True | Foreign key to aircraft master |
 | `maintenance_date` | `StringType` | `DateType` | True | Date of service (`yyyy-MM-dd`) |
-| `maintenance_cost` | `DoubleType` | `DoubleType` | True | Cost in USD (e.g., `12500.50`) |
-| `maintenance_status`| `StringType` | `StringType` | True | Status (`Completed`, `Pending`, etc.) |
+| `maintenance_cost` | `DoubleType` | `DoubleType` | True | Cost in USD (e.g., `45000.0`) |
+| `maintenance_status` | `StringType` | `StringType` | True | Status (`Completed`, `Pending`, etc.) |
 
 ---
 
@@ -46,7 +51,7 @@ An aviation maintenance organization manages aircraft fleet data and maintenance
 2. Keep `QUESTION = "AUTO"` or set `QUESTION = "AIRCRAFT"`.
 3. Implement your functions under section `# 2. MY PRACTICE WORKBENCH`.
 4. Click **▶ Run Python File** in VS Code (or execute `python solution.py`).
-5. The unified test engine will automatically run the 6 test cases in `Tests/test_Aircraft_Maintenance.py` and display your live scorecard.
+5. The unified test engine will automatically run the 6 test cases in `Tests/test_Aircraft_Maintenance.py` using the actual CSV datasets and display your live scorecard.
 
 ---
 
@@ -79,7 +84,18 @@ def load_maintenance_data(spark: SparkSession, path: str, schema: StructType) ->
 
 ---
 
-### Function 3 — Join Aircraft with Maintenance
+### Function 3 — Load Aircraft Data
+```python
+def load_aircraft_data(spark: SparkSession, path: str) -> DataFrame:
+```
+- **Objective:** Ingest the aircraft fleet master CSV file.
+- **Transformation Steps:**
+  1. Read the CSV file located at `path` with `header=True` and `inferSchema=True`.
+- **Return:** `DataFrame` containing all 4 aircraft fleet columns (`aircraft_id`, `aircraft_model`, `base_airport`, `service_status`).
+
+---
+
+### Function 4 — Join Aircraft with Maintenance
 ```python
 def join_aircraft_with_maintenance(aircraft_df: DataFrame, maintenance_df: DataFrame) -> DataFrame:
 ```
@@ -91,7 +107,7 @@ def join_aircraft_with_maintenance(aircraft_df: DataFrame, maintenance_df: DataF
 
 ---
 
-### Function 4 — Aircraft Without Maintenance Records
+### Function 5 — Aircraft Without Maintenance Records
 ```python
 def aircraft_without_maintenance(aircraft_df: DataFrame, maintenance_df: DataFrame) -> DataFrame:
 ```
@@ -102,7 +118,7 @@ def aircraft_without_maintenance(aircraft_df: DataFrame, maintenance_df: DataFra
 
 ---
 
-### Function 5 — Rank Aircraft by Maintenance Cost
+### Function 6 — Rank Aircraft by Maintenance Cost
 ```python
 def rank_aircraft_by_maintenance_cost(df: DataFrame) -> DataFrame:
 ```
@@ -123,7 +139,7 @@ def rank_aircraft_by_maintenance_cost(df: DataFrame) -> DataFrame:
 
 ## 5. Independence & Assessment Rules
 
-- **Independent Testing:** Each function is tested independently using isolated test fixtures. Do not call one student function from another.
+- **Direct CSV Ingestion Practice:** Import and load both CSVs (`aircraft.csv` and `maintenance.csv`) directly via their loader functions. Tests run directly on genuine dataset files, bypassing in-memory mock dataframes.
 - **SparkSession Lifecycle:** Do NOT initialize or stop a `SparkSession` (`getOrCreate()` or `.stop()`) inside `solution.py`.
 - **File I/O:** Do NOT use standard Python file reading (`open()`, `csv`, `pandas`). Use only PySpark DataFrame API methods.
 - **Deterministic Output:** Ensure exact column naming and ordering as documented in each function contract.

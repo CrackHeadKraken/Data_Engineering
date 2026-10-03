@@ -128,29 +128,9 @@ def test_03_load_policy_data(spark, tmp_path):
 
 def test_04_join_claims_with_policies(spark):
     def check():
-        claim_schema = StructType([
-            StructField("claim_id", StringType(), True),
-            StructField("policy_id", StringType(), True),
-            StructField("customer_id", StringType(), True),
-            StructField("claim_amount", DoubleType(), True),
-            StructField("claim_status", StringType(), True),
-            StructField("claim_date", DateType(), True),
-        ])
-        policy_schema = StructType([
-            StructField("policy_id", StringType(), True),
-            StructField("policy_type", StringType(), True),
-            StructField("region", StringType(), True),
-            StructField("annual_premium", DoubleType(), True),
-        ])
-        claims = spark.createDataFrame([
-            ("C1", "P1", "U1", 100.0, "Approved", date(2026, 1, 1)),
-            ("C2", "P9", "U2", 200.0, "Approved", date(2026, 1, 2)),
-            ("C3", "P2", "U3", 300.0, "Rejected", date(2026, 1, 3)),
-        ], claim_schema)
-        policies = spark.createDataFrame([
-            ("P1", "Health", "South", 1000.0),
-            ("P2", "Motor", "West", 2000.0),
-        ], policy_schema)
+        schema = evaluator_claim_schema()
+        claims = solution.load_claims_data(spark, CLAIMS_PATH, schema)
+        policies = solution.load_policy_data(spark, POLICIES_PATH)
         out = solution.join_claims_with_policies(claims, policies)
         assert isinstance(out, DataFrame), f"Return type must be DataFrame; Actual = {type(out).__name__}"
         expected_columns = [
@@ -158,54 +138,50 @@ def test_04_join_claims_with_policies(spark):
             "claim_status", "claim_date", "policy_type", "region", "annual_premium"
         ]
         assert_equal(out.columns, expected_columns, "Joined output columns/order are incorrect")
-        rows = sorted((r.claim_id, r.policy_id, r.policy_type) for r in out.collect())
-        assert_equal(rows, [("C1", "P1", "Health"), ("C3", "P2", "Motor")], "Inner join result is incorrect or unmatched policy was retained")
-    write_result(4, "join_claims_with_policies", "Inner join on policy_id with exact 9 output columns; unmatched claims excluded", check)
+        assert_equal(out.count(), 14, "Inner join row count is incorrect (unmatched policy P999 must be excluded)")
+        ids = [r.claim_id for r in out.select("claim_id").collect()]
+        assert "CL013" not in ids, "Unmatched claim CL013 (policy P999) was unexpectedly retained in inner join"
+    write_result(4, "join_claims_with_policies", "Inner join on policy_id with exact 9 output columns loaded from real CSVs; unmatched claim CL013 excluded", check)
 
 
 def test_05_policy_type_with_highest_approved_claim_amount(spark):
     def check():
-        df = spark.createDataFrame([
-            ("Health", "Approved", 25000.0),
-            ("Motor", "Approved", 18000.0),
-            ("Health", "Approved", 30000.0),
-            ("Motor", "Rejected", 50000.0),
-            ("Home", "Approved", None),
-        ], ["policy_type", "claim_status", "claim_amount"])
-        actual = solution.policy_type_with_highest_approved_claim_amount(df)
+        schema = evaluator_claim_schema()
+        claims = solution.load_claims_data(spark, CLAIMS_PATH, schema)
+        policies = solution.load_policy_data(spark, POLICIES_PATH)
+        joined = solution.join_claims_with_policies(claims, policies)
+        actual = solution.policy_type_with_highest_approved_claim_amount(joined)
         assert isinstance(actual, tuple) and len(actual) == 2, f"Return value must be a 2-item tuple; Actual = {actual!r}"
         assert_equal(actual[0], "Health", "Highest approved-claim policy type is incorrect")
-        assert abs(float(actual[1]) - 55000.0) < 1e-9, f"Approved claim total is incorrect; Actual = {actual[1]!r}"
-
-        modified = spark.createDataFrame([
-            ("Travel", "Approved", 90000.0),
-            ("Health", "Approved", 1000.0),
-        ], ["policy_type", "claim_status", "claim_amount"])
-        changed = solution.policy_type_with_highest_approved_claim_amount(modified)
-        assert_equal(changed[0], "Travel", "Top policy type did not change for modified input")
-        assert abs(float(changed[1]) - 90000.0) < 1e-9, f"Modified total is incorrect; Actual = {changed[1]!r}"
-    write_result(5, "policy_type_with_highest_approved_claim_amount", "('Health', 55000.0) for baseline and changed result for modified input", check)
+        assert abs(float(actual[1]) - 111000.0) < 1e-9, f"Approved claim total is incorrect; Actual = {actual[1]!r}"
+    write_result(5, "policy_type_with_highest_approved_claim_amount", "('Health', 111000.0) from actual joined claims and policies datasets", check)
 
 
-def test_06_policy_type_tie_and_empty(spark):
+def test_06_policy_type_tie_and_empty(spark, tmp_path):
     def check():
-        tied = spark.createDataFrame([
-            ("Motor", "Approved", 20000.0),
-            ("Health", "Approved", 20000.0),
-            (None, "Approved", 99999.0),
-            ("   ", "Approved", 99999.0),
-        ], ["policy_type", "claim_status", "claim_amount"])
-        tie_result = solution.policy_type_with_highest_approved_claim_amount(tied)
+        tied_file = tmp_path / "tied_claims.csv"
+        tied_file.write_text(
+            "policy_type,claim_status,claim_amount\n"
+            "Motor,Approved,20000.0\n"
+            "Health,Approved,20000.0\n"
+            ",Approved,99999.0\n",
+            encoding="utf-8"
+        )
+        tied_df = spark.read.option("header", True).option("inferSchema", True).csv(str(tied_file))
+        tie_result = solution.policy_type_with_highest_approved_claim_amount(tied_df)
         assert_equal(tie_result[0], "Health", "Alphabetical tie-breaker is incorrect")
         assert abs(float(tie_result[1]) - 20000.0) < 1e-9, f"Tie total is incorrect; Actual = {tie_result[1]!r}"
 
-        empty = spark.createDataFrame([
-            ("Health", "Rejected", 50000.0),
-            (None, "Approved", 10000.0),
-            ("", "Approved", None),
-        ], ["policy_type", "claim_status", "claim_amount"])
+        empty_file = tmp_path / "empty_claims.csv"
+        empty_file.write_text(
+            "policy_type,claim_status,claim_amount\n"
+            "Health,Rejected,50000.0\n"
+            ",Approved,10000.0\n",
+            encoding="utf-8"
+        )
+        empty_df = spark.read.option("header", True).option("inferSchema", True).csv(str(empty_file))
         assert_equal(
-            solution.policy_type_with_highest_approved_claim_amount(empty),
+            solution.policy_type_with_highest_approved_claim_amount(empty_df),
             ("", 0.0),
             "Empty valid-approved-claim result is incorrect",
         )

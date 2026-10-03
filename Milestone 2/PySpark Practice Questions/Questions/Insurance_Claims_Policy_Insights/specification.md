@@ -13,8 +13,8 @@
 ## 1. Problem Statement
 An insurance provider stores claims activity and policy contracts across distinct datasets. As a data engineer, your objective is to:
 1. Define an explicit schema for insurance claims transactions.
-2. Load and type-cast claims data, and ingest policy contracts using schema inference.
-3. Perform a relational join to unify claim details with policy plans.
+2. Ingest and type-cast claims data from CSV, and ingest policy contracts from CSV.
+3. Perform a relational join to unify claim details with policy plans using real dataset files.
 4. Calculate cumulative approved payouts by policy classification and determine the highest payout policy type.
 
 ---
@@ -24,20 +24,20 @@ An insurance provider stores claims activity and policy contracts across distinc
 ### A) Claims Records (`data/insurance_claims.csv`)
 | Column Name | Schema Read Type | Transformed Type | Nullable | Description / Example |
 |---|---|---|---|---|
-| `claim_id` | `StringType` | `StringType` | True | Unique claim record ID (e.g., `CLM101`) |
+| `claim_id` | `StringType` | `StringType` | True | Unique claim record ID (e.g., `CL001`) |
 | `policy_id` | `StringType` | `StringType` | True | Foreign key to policy master |
-| `customer_id` | `StringType` | `StringType` | True | Customer identifier (e.g., `CUST301`) |
-| `claim_amount`| `DoubleType` | `DoubleType` | True | Claimed expense in USD |
+| `customer_id` | `StringType` | `StringType` | True | Customer identifier (e.g., `C101`) |
+| `claim_amount`| `DoubleType` | `DoubleType` | True | Claimed expense in USD (e.g., `25000.0`) |
 | `claim_status`| `StringType` | `StringType` | True | Status (`Approved`, `Rejected`, `Pending`) |
 | `claim_date` | `StringType` | `DateType` | True | Date filed (`yyyy-MM-dd`) |
 
 ### B) Policy Contracts (`data/insurance_policies.csv`)
 | Column Name | Ingested Data Type | Nullable | Description / Example |
 |---|---|---|---|
-| `policy_id` | `StringType` | True | Unique policy identifier (e.g., `POL01`) |
-| `policy_type` | `StringType` | True | Category (e.g., `Health`, `Auto`, `Home`, `Life`) |
+| `policy_id` | `StringType` | True | Unique policy identifier (e.g., `P101`) |
+| `policy_type` | `StringType` | True | Category (e.g., `Health`, `Motor`, `Home`, `Travel`) |
 | `region` | `StringType` | True | Coverage region (e.g., `North`, `West`, `South`) |
-| `annual_premium` | `DoubleType` | True | Yearly premium cost |
+| `annual_premium` | `DoubleType` | True | Yearly premium cost (e.g., `12000.0`) |
 
 ---
 
@@ -47,7 +47,7 @@ An insurance provider stores claims activity and policy contracts across distinc
 2. Keep `QUESTION = "AUTO"` or set `QUESTION = "INSURANCE"`.
 3. Implement your functions under section `# 2. MY PRACTICE WORKBENCH`.
 4. Click **▶ Run Python File** in VS Code (or execute `python solution.py`).
-5. The unified test engine will automatically run the 6 test cases in `Tests/test_Insurance_Claims.py` and display your live scorecard.
+5. The unified test engine will automatically run the 6 test cases in `Tests/test_Insurance_Claims.py` directly on the CSV datasets and display your live scorecard.
 
 ---
 
@@ -124,13 +124,13 @@ def policy_type_with_highest_approved_claim_amount(df: DataFrame) -> Tuple[str, 
   3. Group by `policy_type` and aggregate `sum(col("claim_amount")).alias("total_claim_amount")`.
   4. Order by `total_claim_amount` descending, and by `policy_type` ascending as a deterministic tie-breaker.
   5. Collect the top row and return as a Python tuple `(str(policy_type), float(total_claim_amount))`.
-- **Return:** `Tuple[str, float]` (e.g., `("Health", 87500.0)`).
+- **Return:** `Tuple[str, float]` (e.g., `("Health", 111000.0)`).
 
 ---
 
 ## 5. Independence & Assessment Rules
 
-- **Independent Testing:** Each function is evaluated with independent evaluator fixtures. Do not call one student function from another.
+- **Direct CSV Ingestion Practice:** Ingest both CSVs (`insurance_claims.csv` and `insurance_policies.csv`) directly via their loader functions. Tests run directly on real CSV dataset files, bypassing in-memory mock dataframes.
 - **SparkSession Lifecycle:** Do not start or terminate SparkSession instances in `solution.py`.
 - **Return Type Precision:** Function 5 must return a standard Python tuple `(str, float)`, not a Spark DataFrame or Row object.
 - **CSV Isolation:** Do not use Python built-in file handlers (`open()`, `csv`, `pandas`) to read assessment files.
