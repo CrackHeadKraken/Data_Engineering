@@ -28,10 +28,7 @@ def append_wait_minutes(df: DataFrame) -> DataFrame:
 
 def get_long_wait_appointments(df: DataFrame, threshold_minutes: int) -> DataFrame:
     if "wait_minutes" not in df.columns:
-        sched = unix_timestamp(col("scheduled_time"))
-        actual = unix_timestamp(col("actual_time"))
-        wait = floor((actual - sched) / lit(60.0))
-        df = df.withColumn("wait_minutes", wait.cast("int"))
+        df = append_wait_minutes(df)
     return df.filter(col("wait_minutes") > lit(threshold_minutes))
 
 

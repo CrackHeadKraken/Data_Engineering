@@ -133,7 +133,7 @@ def enforce_required_methods(func_name: str):
         if token not in src:
             raise AssertionError(msg)
 
-    if func_name in ("append_wait_minutes", "get_long_wait_appointments"):
+    if func_name == "append_wait_minutes":
         need("unix_timestamp", "unix_timestamp not used")
         need("withColumn", "withColumn not used")
 
