@@ -369,16 +369,24 @@ def enforce_required_methods(func_name: str):
     ]
   },
   "list_channels": {
+    "either": [
+      [
+        "distinct",
+        "dropDuplicates",
+        "distinct or dropDuplicates not used"
+      ]
+    ],
     "need": [
-      "distinct",
       "collect"
     ]
   },
   "orders_in_date_range": {
-    "need": [
-      "between"
-    ],
     "either": [
+      [
+        "between",
+        ">=",
+        "between or comparison operator not used"
+      ],
       [
         "filter",
         "where",

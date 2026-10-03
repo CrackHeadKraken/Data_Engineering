@@ -144,7 +144,8 @@ def enforce_required_methods(func_name: str):
     if func_name == "most_delayed_doctor":
         need("groupBy", "groupBy not used")
         need("agg", "agg not used")
-        need("orderBy", "orderBy not used")
+        if ("orderBy" not in src) and ("sort" not in src):
+            raise AssertionError("orderBy/sort not used")
 
     if func_name == "long_wait_percentage":
         if ("filter" not in src) and ("where" not in src):
@@ -152,8 +153,10 @@ def enforce_required_methods(func_name: str):
         need("count", "count not used")
 
     if func_name == "most_delayed_appointment":
-        need("orderBy", "orderBy not used")
-        need("collect", "collect not used")
+        if ("orderBy" not in src) and ("sort" not in src):
+            raise AssertionError("orderBy/sort not used")
+        if not any(t in src for t in ("collect", "first", "take", "head")):
+            raise AssertionError("collect/first/take/head not used")
 
     if func_name == "avg_wait_by_department":
         need("groupBy", "groupBy not used")

@@ -211,40 +211,18 @@ from pyspark.sql.window import Window as w
 from typing import Tuple, List
 
 def load_appointment_data(spark: SparkSession) -> DataFrame:
-    return spark.read.option("header", True).option("inferSchema", True).csv(r"C:\Users\Arnav\Desktop\L&T Milestone Prep\Milestone 2\PySpark Practice Questions\data\appointments.csv")
+    return spark.read.option("header", True).option("inferSchema", True).csv(get_data_path("appointments.csv"))
 
 def append_wait_minutes(df: DataFrame) -> DataFrame:
-
     sc_time = f.unix_timestamp(f.col("scheduled_time"))
-
     ac_time = f.unix_timestamp(f.col("actual_time"))
-
     wait_minutes = f.floor((ac_time - sc_time)/f.lit(60))
-
     return df.withColumn("wait_minutes", wait_minutes.cast(t.IntegerType()))
 
 def get_long_wait_appointments(df: DataFrame, threshold_minutes: int) -> DataFrame:
-
     if "wait_minutes" not in df.columns:
         df = append_wait_minutes(df)
     return df.filter(f.col("wait_minutes") > f.lit(threshold_minutes))
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 ### ========================================================================================================================

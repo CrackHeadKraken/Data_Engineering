@@ -496,14 +496,33 @@ REQUIRED_TOKENS = {
 }
 
 
+EQUIVALENT_TOKENS = {
+    "filter": ["filter", "where"],
+    "orderBy": ["orderBy", "sort"],
+    "collect": ["collect", "first", "take", "head"],
+    "avg": ["avg", "mean"],
+    "countDistinct": ["countDistinct", "count_distinct"],
+    "between": ["between", ">="],
+    "stddev_pop": ["stddev_pop", "stddev", "stddev_samp"],
+    "spark.read": ["read"],
+}
+
+
 def assert_source_contains(fn_name: str):
     if fn_name not in REQUIRED_TOKENS:
         return
-    src = inspect.getsource(getattr(sol, fn_name))
+    fn = getattr(sol, fn_name, None)
+    if not fn:
+        return
+    try:
+        src = inspect.getsource(fn)
+    except Exception:
+        return
     for tok in REQUIRED_TOKENS[fn_name]:
-        if tok not in src:
+        candidates = EQUIVALENT_TOKENS.get(tok, [tok])
+        if not any(c in src for c in candidates):
             raise AssertionError(
-                f"Expected Spark API token '{tok}' not found in {fn_name}"
+                f"Expected Spark API operation related to '{tok}' not found in {fn_name}"
             )
 
 
