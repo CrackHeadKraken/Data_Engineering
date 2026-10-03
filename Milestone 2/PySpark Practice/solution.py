@@ -116,69 +116,90 @@ QUESTION_REF_MAP = {
 
 ### Practice 1 -  Q1 
 
+# from pyspark.sql import SparkSession, DataFrame
+# from pyspark.sql import functions as f
+# from pyspark.sql import types as t
+# from pyspark.sql.window import Window as w
+# from typing import List, Tuple
+
+# def define_maintenance_schema() -> StructType:
+#     return t.StructType([
+#         t.StructField("maintenance_id",t.StringType(), True),
+#         t.StructField("aircraft_id",t.StringType(), True),
+#         t.StructField("maintenance_date",t.StringType(), True),
+#         t.StructField("maintenance_cost",t.DoubleType(), True),
+#         t.StructField("maintenance_status",t.StringType(), True),
+#     ])
+
+# def load_maintenance_data(spark: SparkSession, path: str, schema: StructType) -> DataFrame:
+#     return spark.read.option("header", True).schema(schema).csv(path).withColumn("maintenance_date", f.to_date(f.col("maintenance_date")))
+
+# def load_aircraft_data(spark: SparkSession, path: str) -> DataFrame:
+#     return spark.read.option("header", True).csv(path)
+
+# def join_aircraft_with_maintenance(aircraft_df: DataFrame, maintenance_df: DataFrame) -> DataFrame:
+#     return aircraft_df.join(maintenance_df, on = "aircraft_id", how = "inner")
+
+# def aircraft_without_maintenance(aircraft_df: DataFrame, maintenance_df: DataFrame) -> DataFrame:
+#     return aircraft_df.join(maintenance_df, on = "aircraft_id", how = "left_anti")             
+
+
+# ### Types of Joins in Pyspark
+
+# # LEFT               - All records from left and matching from right.
+# # RIGHT              - All records from right and matching from left.
+# # INNER              - Only matching records from both tables.
+# # FULL OUTER (OUTER) - All matching records from both tables. With Unmatched records as ### "NULL" ###
+# # LEFT SEMI          - Only records from left table which match/prsent in right table are kept while not joining or dropping all right columns.
+# # LEFT ANTI          - Only records from left table which are not present in right table are kept while dropping or not joining right table.
+
+
+# def rank_aircraft_by_maintenance_cost(df: DataFrame) -> DataFrame:
+#     agg_df = df.groupBy(f.col("aircraft_id"), f.col("aircraft_model")).agg(f.sum(f.col("maintenance_cost")).alias("total_maintenance_cost"))
+
+#     window = w.partitionBy(f.col("aircraft_model")).orderBy(f.col("total_maintenance_cost").desc())
+
+#     return agg_df.withColumn("maintenance_rank", rank().over(window)).select("aircraft_model","aircraft_id","total_maintenance_cost","maintenance_rank")
+
+# ### Window is a Module consisting a seperate class within it called Window which consist of method PartitionBy hence ### Always import it as "from pyspark.sql.window import Window as w" ###
+
+
+### Practice 1 -  Q1 REPRACTICE
+
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql import functions as f
 from pyspark.sql import types as t
 from pyspark.sql.window import Window as w
-from typing import List, Tuple
+from typing import Tuple, List
 
 def define_maintenance_schema() -> StructType:
     return t.StructType([
-        t.StructField("maintenance_id",t.StringType(), True),
-        t.StructField("aircraft_id",t.StringType(), True),
-        t.StructField("maintenance_date",t.StringType(), True),
-        t.StructField("maintenance_cost",t.DoubleType(), True),
-        t.StructField("maintenance_status",t.StringType(), True),
+        t.StructField("maintenance_id", t.StringType(), True),
+        t.StructField("aircraft_id", t.StringType(), True),
+        t.StructField("maintenance_date", t.StringType(), True),
+        t.StructField("maintenance_cost", t.DoubleType(), True),
+        t.StructField("maintenance_status", t.StringType(), True),
     ])
 
+
 def load_maintenance_data(spark: SparkSession, path: str, schema: StructType) -> DataFrame:
-    return spark.read.option("header", True).schema(schema).csv(path).withColumn("maintenance_date", f.to_date(f.col("maintenance_date")))
+    return spark.read.option("header",True).schema(schema).csv(path).withColumn("maintenance_date", f.to_date(f.col("maintenance_date")) )
 
 def load_aircraft_data(spark: SparkSession, path: str) -> DataFrame:
-    return spark.read.option("header", True).csv(path)
+    return spark.read.option("header",True).option("inferSchema",True).csv(path)
 
 def join_aircraft_with_maintenance(aircraft_df: DataFrame, maintenance_df: DataFrame) -> DataFrame:
     return aircraft_df.join(maintenance_df, on = "aircraft_id", how = "inner")
 
 def aircraft_without_maintenance(aircraft_df: DataFrame, maintenance_df: DataFrame) -> DataFrame:
-    return aircraft_df.join(maintenance_df, on = "aircraft_id", how = "left_anti")             
-
-
-### Types of Joins in Pyspark
-
-# LEFT               - All records from left and matching from right.
-# RIGHT              - All records from right and matching from left.
-# INNER              - Only matching records from both tables.
-# FULL OUTER (OUTER) - All matching records from both tables. With Unmatched records as ### "NULL" ###
-# LEFT SEMI          - Only records from left table which match/prsent in right table are kept while not joining or dropping all right columns.
-# LEFT ANTI          - Only records from left table which are not present in right table are kept while dropping or not joining right table.
-
+    return aircraft_df.join(maintenance_df, on = "aircraft_id", how = "left_anti")
 
 def rank_aircraft_by_maintenance_cost(df: DataFrame) -> DataFrame:
-    agg_df = (
-        df.groupBy("aircraft_model", "aircraft_id")
-          .agg(fsum(col("maintenance_cost")).alias("total_maintenance_cost"))
-    )
-    window_spec = Window.partitionBy("aircraft_model").orderBy(col("total_maintenance_cost").desc())
-    return (
-        agg_df.withColumn("maintenance_rank", rank().over(window_spec))
-              .select("aircraft_model", "aircraft_id", "total_maintenance_cost", "maintenance_rank")
-    )
+    agg_df = df.groupBy(f.col("aircraft_id"), f.col("aircraft_model")).agg(f.sum(f.col("maintenance_cost")).alias("total_maintenance_cost"))
 
+    window = w.partitionBy("aircraft_model").orderBy(f.col("total_maintenance_cost").desc())
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+    return agg_df.withColumn("maintenance_rank", rank().over(window)).select("aircraft_id", "aircraft_model", "total_maintenance_cost", "maintenance_rank")
 
 
 

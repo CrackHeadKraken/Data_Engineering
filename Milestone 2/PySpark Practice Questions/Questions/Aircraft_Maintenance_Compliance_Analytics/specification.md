@@ -1,12 +1,12 @@
 # Aircraft Maintenance Compliance Analytics
 
-| Field | Detail |
-|---|---|
-| **Domain** | Aviation Maintenance & Operations |
-| **Difficulty** | Medium |
-| **Total Marks** | 20 Marks |
-| **Recommended Duration** | 20–25 Minutes |
-| **Assessment Code** | `AIRCRAFT` |
+| Field                          | Detail                            |
+| ------------------------------ | --------------------------------- |
+| **Domain**               | Aviation Maintenance & Operations |
+| **Difficulty**           | Medium                            |
+| **Total Marks**          | 20 Marks                          |
+| **Recommended Duration** | 20–25 Minutes                    |
+| **Assessment Code**      | `AIRCRAFT`                      |
 
 ---
 
@@ -26,22 +26,22 @@ An aviation maintenance organization manages aircraft fleet data and maintenance
 
 ### A) Aircraft Fleet Master (`data/aircraft.csv`)
 
-| Column Name | Data Type | Nullable | Description / Example |
-|---|---|---|---|
-| `aircraft_id` | `StringType` | True | Unique aircraft identifier (e.g., `AC101`) |
-| `aircraft_model` | `StringType` | True | Model family (e.g., `A320`, `B737`, `A321`) |
-| `base_airport` | `StringType` | True | IATA airport code of home base (e.g., `Chennai`, `Delhi`) |
-| `service_status` | `StringType` | True | Operational status (e.g., `Active`, `Grounded`) |
+| Column Name        | Data Type      | Nullable | Description / Example                                        |
+| ------------------ | -------------- | -------- | ------------------------------------------------------------ |
+| `aircraft_id`    | `StringType` | True     | Unique aircraft identifier (e.g.,`AC101`)                  |
+| `aircraft_model` | `StringType` | True     | Model family (e.g.,`A320`, `B737`, `A321`)             |
+| `base_airport`   | `StringType` | True     | IATA airport code of home base (e.g.,`Chennai`, `Delhi`) |
+| `service_status` | `StringType` | True     | Operational status (e.g.,`Active`, `Grounded`)           |
 
 ### B) Maintenance Records (`data/maintenance.csv`)
 
-| Column Name | Schema Type (during read) | Final Ingested Type | Nullable | Description |
-|---|---|---|---|---|
-| `maintenance_id` | `StringType` | `StringType` | True | Unique maintenance event ID (e.g., `M001`) |
-| `aircraft_id` | `StringType` | `StringType` | True | Foreign key to aircraft master |
-| `maintenance_date` | `StringType` | `DateType` | True | Date of service (`yyyy-MM-dd`) |
-| `maintenance_cost` | `DoubleType` | `DoubleType` | True | Cost in USD (e.g., `45000.0`) |
-| `maintenance_status` | `StringType` | `StringType` | True | Status (`Completed`, `Pending`, etc.) |
+| Column Name            | Schema Type (during read) | Final Ingested Type | Nullable | Description                                 |
+| ---------------------- | ------------------------- | ------------------- | -------- | ------------------------------------------- |
+| `maintenance_id`     | `StringType`            | `StringType`      | True     | Unique maintenance event ID (e.g.,`M001`) |
+| `aircraft_id`        | `StringType`            | `StringType`      | True     | Foreign key to aircraft master              |
+| `maintenance_date`   | `StringType`            | `DateType`        | True     | Date of service (`yyyy-MM-dd`)            |
+| `maintenance_cost`   | `DoubleType`            | `DoubleType`      | True     | Cost in USD (e.g.,`45000.0`)              |
+| `maintenance_status` | `StringType`            | `StringType`      | True     | Status (`Completed`, `Pending`, etc.)   |
 
 ---
 
@@ -58,9 +58,11 @@ An aviation maintenance organization manages aircraft fleet data and maintenance
 ## 4. Required Functions & Implementation Contract
 
 ### Function 1 — Define Maintenance Schema
+
 ```python
 def define_maintenance_schema() -> StructType:
 ```
+
 - **Objective:** Construct and return an explicit `StructType` schema for reading `maintenance.csv`.
 - **Field Order & Types:**
   1. `maintenance_id`: `StringType`, nullable `True`
@@ -73,9 +75,11 @@ def define_maintenance_schema() -> StructType:
 ---
 
 ### Function 2 — Load Maintenance Data
+
 ```python
 def load_maintenance_data(spark: SparkSession, path: str, schema: StructType) -> DataFrame:
 ```
+
 - **Objective:** Ingest maintenance records using the supplied explicit schema and convert dates.
 - **Transformation Steps:**
   1. Read the CSV file located at `path` with `header=True` using the supplied `schema`.
@@ -85,9 +89,11 @@ def load_maintenance_data(spark: SparkSession, path: str, schema: StructType) ->
 ---
 
 ### Function 3 — Load Aircraft Data
+
 ```python
 def load_aircraft_data(spark: SparkSession, path: str) -> DataFrame:
 ```
+
 - **Objective:** Ingest the aircraft fleet master CSV file.
 - **Transformation Steps:**
   1. Read the CSV file located at `path` with `header=True` and `inferSchema=True`.
@@ -96,9 +102,11 @@ def load_aircraft_data(spark: SparkSession, path: str) -> DataFrame:
 ---
 
 ### Function 4 — Join Aircraft with Maintenance
+
 ```python
 def join_aircraft_with_maintenance(aircraft_df: DataFrame, maintenance_df: DataFrame) -> DataFrame:
 ```
+
 - **Objective:** Combine aircraft metadata with maintenance inspection records.
 - **Transformation Steps:**
   1. Perform an **inner join** between `aircraft_df` and `maintenance_df` matching on `aircraft_id`.
@@ -108,9 +116,11 @@ def join_aircraft_with_maintenance(aircraft_df: DataFrame, maintenance_df: DataF
 ---
 
 ### Function 5 — Aircraft Without Maintenance Records
+
 ```python
 def aircraft_without_maintenance(aircraft_df: DataFrame, maintenance_df: DataFrame) -> DataFrame:
 ```
+
 - **Objective:** Identify aircraft in the fleet that have no recorded maintenance history.
 - **Transformation Steps:**
   1. Perform a **left-anti join** (`how="left_anti"`) of `aircraft_df` with `maintenance_df` on `aircraft_id`.
@@ -119,9 +129,11 @@ def aircraft_without_maintenance(aircraft_df: DataFrame, maintenance_df: DataFra
 ---
 
 ### Function 6 — Rank Aircraft by Maintenance Cost
+
 ```python
 def rank_aircraft_by_maintenance_cost(df: DataFrame) -> DataFrame:
 ```
+
 - **Objective:** Compute total maintenance expenditure per aircraft and rank them within each model family.
 - **Transformation Steps:**
   1. Group input by `aircraft_model` and `aircraft_id`.
