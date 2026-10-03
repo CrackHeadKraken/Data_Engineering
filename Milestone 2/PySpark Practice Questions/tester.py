@@ -327,17 +327,27 @@ def execute_question_tests(qkey: str, custom_solution_module=None) -> Dict:
             pass
 
     combined_output = log_text + "\n" + stdout
+    lines = combined_output.splitlines()
     passed_cases = []
     failed_cases = []
 
-    for line in combined_output.splitlines():
-        line_clean = line.strip()
+    i = 0
+    while i < len(lines):
+        line_clean = lines[i].strip()
         if "[PASS]" in line_clean or " : PASS" in line_clean:
             if line_clean not in passed_cases:
                 passed_cases.append(line_clean)
         elif "[FAIL]" in line_clean or " : FAIL" in line_clean:
-            if line_clean not in failed_cases:
-                failed_cases.append(line_clean)
+            msg = line_clean
+            j = i + 1
+            while j < len(lines) and not ("[FAIL]" in lines[j] or "[PASS]" in lines[j] or ": PASS" in lines[j] or ": FAIL" in lines[j] or lines[j].strip().startswith("===")):
+                if lines[j].strip().startswith("Reason"):
+                    msg += f"\n         -> {lines[j].strip()}"
+                    break
+                j += 1
+            if msg not in failed_cases:
+                failed_cases.append(msg)
+        i += 1
 
     total_expected = qinfo["expected_tests"]
     passed_count = len(passed_cases)

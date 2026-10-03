@@ -295,6 +295,6 @@ def test_configurable_functions(
         enforce_required_methods(func_name)
         log_pass(case_no, desc)
 
-    except AssertionError as ae:
+    except Exception as ae:
         log_fail(case_no, desc, expected, str(ae))
         pytest.fail("Test case failed.", pytrace=False)

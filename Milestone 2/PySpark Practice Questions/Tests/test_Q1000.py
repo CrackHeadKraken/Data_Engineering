@@ -718,5 +718,5 @@ def test_configurable_functions(
 
         _pass(prefix, desc)
 
-    except AssertionError as e:
+    except (AssertionError, Exception) as e:
         _fail(prefix, desc, expected, str(e))

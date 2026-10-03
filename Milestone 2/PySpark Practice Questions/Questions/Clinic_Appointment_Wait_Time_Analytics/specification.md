@@ -1,16 +1,17 @@
 # Clinic Appointment Wait-Time Analytics (Q777)
 
-| Field | Detail |
-|---|---|
-| **Domain** | Healthcare Operations & Patient Wait-Time Analytics |
-| **Difficulty** | Intermediate |
-| **Total Marks** | 20 Marks |
-| **Recommended Duration** | 25–35 Minutes |
-| **Assessment Code** | `Q777` |
+| Field                          | Detail                                              |
+| ------------------------------ | --------------------------------------------------- |
+| **Domain**               | Healthcare Operations & Patient Wait-Time Analytics |
+| **Difficulty**           | Intermediate                                        |
+| **Total Marks**          | 20 Marks                                            |
+| **Recommended Duration** | 25–35 Minutes                                      |
+| **Assessment Code**      | `Q777`                                            |
 
 ---
 
 ## 1. Problem Statement
+
 A multi-specialty healthcare network tracks patient appointments across multiple departments and physicians. To improve outpatient operational efficiency, identify clinical bottlenecks, and enhance patient satisfaction, you must implement pure PySpark functions to analyze appointment schedule deviations, calculate wait times, evaluate physician and department delays, and summarize common delay drivers.
 
 ---
@@ -18,15 +19,16 @@ A multi-specialty healthcare network tracks patient appointments across multiple
 ## 2. Dataset Contract
 
 ### Appointments Data (`data/appointments.csv`)
-| Column Name | Ingested Data Type | Nullable | Description / Example |
-|---|---|---|---|
-| `appointment_id` | `StringType` | False | Unique appointment identifier (e.g., `APT_1001`) |
-| `patient_id` | `StringType` | True | Unique patient identifier (e.g., `PAT_501`) |
-| `doctor` | `StringType` | True | Consulting physician name (e.g., `Dr. Adams`) |
-| `department` | `StringType` | True | Clinical department (e.g., `Cardiology`, `Neurology`, `Pediatrics`) |
-| `scheduled_time` | `StringType` | True | Scheduled consultation timestamp (`yyyy-MM-dd HH:mm:ss`) |
-| `actual_time` | `StringType` | True | Actual consultation start timestamp (`yyyy-MM-dd HH:mm:ss`) |
-| `wait_reason` | `StringType` | True | Delay categorization (e.g., `Emergency`, `Lab Delay`, `Documentation`) |
+
+| Column Name        | Ingested Data Type | Nullable | Description / Example                                                       |
+| ------------------ | ------------------ | -------- | --------------------------------------------------------------------------- |
+| `appointment_id` | `StringType`     | False    | Unique appointment identifier (e.g.,`APT_1001`)                           |
+| `patient_id`     | `StringType`     | True     | Unique patient identifier (e.g.,`PAT_501`)                                |
+| `doctor`         | `StringType`     | True     | Consulting physician name (e.g.,`Dr. Adams`)                              |
+| `department`     | `StringType`     | True     | Clinical department (e.g.,`Cardiology`, `Neurology`, `Pediatrics`)    |
+| `scheduled_time` | `StringType`     | True     | Scheduled consultation timestamp (`yyyy-MM-dd HH:mm:ss`)                  |
+| `actual_time`    | `StringType`     | True     | Actual consultation start timestamp (`yyyy-MM-dd HH:mm:ss`)               |
+| `wait_reason`    | `StringType`     | True     | Delay categorization (e.g.,`Emergency`, `Lab Delay`, `Documentation`) |
 
 ---
 
@@ -43,9 +45,11 @@ A multi-specialty healthcare network tracks patient appointments across multiple
 ## 4. Required Functions & Implementation Contract
 
 ### Function 1 — Load Appointment Data
+
 ```python
 def load_appointment_data(spark: SparkSession) -> DataFrame:
 ```
+
 - **Objective:** Ingest `data/appointments.csv` into a PySpark DataFrame with appropriate schema and headers.
 - **Transformation Steps:**
   1. Read CSV using `header=True` and `inferSchema=True`.
@@ -55,23 +59,29 @@ def load_appointment_data(spark: SparkSession) -> DataFrame:
 ---
 
 ### Function 2 — Append Wait Minutes
+
 ```python
 def append_wait_minutes(df: DataFrame) -> DataFrame:
 ```
+
 - **Objective:** Compute the patient wait duration in integer minutes.
 - **Transformation Steps:**
   1. Convert `scheduled_time` and `actual_time` to epoch seconds via `unix_timestamp`.
   2. Compute wait minutes as:
-     $$\text{wait\_minutes} = \lfloor \frac{\text{actual} - \text{scheduled}}{60} \rfloor$$
+     $$
+     \text{wait\_minutes} = \lfloor \frac{\text{actual} - \text{scheduled}}{60} \rfloor
+     $$
   3. Cast the resulting value to `IntegerType` and add column `wait_minutes`.
 - **Return:** Updated `DataFrame` containing the `wait_minutes` column.
 
 ---
 
 ### Function 3 — Filter Long Wait Appointments
+
 ```python
 def get_long_wait_appointments(df: DataFrame, threshold_minutes: int) -> DataFrame:
 ```
+
 - **Objective:** Extract appointments where wait duration strictly exceeds a defined threshold.
 - **Transformation Steps:**
   1. Ensure `wait_minutes` is present (compute if missing).
@@ -81,9 +91,11 @@ def get_long_wait_appointments(df: DataFrame, threshold_minutes: int) -> DataFra
 ---
 
 ### Function 4 — Most Delayed Doctor
+
 ```python
 def most_delayed_doctor(df: DataFrame) -> DataFrame:
 ```
+
 - **Objective:** Identify the physician accumulating the highest cumulative patient wait duration.
 - **Transformation Steps:**
   1. Group by `doctor`.
@@ -95,23 +107,29 @@ def most_delayed_doctor(df: DataFrame) -> DataFrame:
 ---
 
 ### Function 5 — Long Wait Percentage
+
 ```python
 def long_wait_percentage(df: DataFrame) -> float:
 ```
+
 - **Objective:** Calculate the percentage of appointments exceeding a 30-minute threshold.
 - **Transformation Steps:**
   1. Count total records ($N$). Return `0.0` if $N = 0$.
   2. Count records where `wait_minutes > 30` ($K$).
   3. Compute percentage:
-     $$\text{percentage} = \frac{K}{N} \times 100.0$$
+     $$
+     \text{percentage} = \frac{K}{N} \times 100.0
+     $$
 - **Return:** Python `float` representing percentage (e.g., `45.5`).
 
 ---
 
 ### Function 6 — Most Delayed Appointment
+
 ```python
 def most_delayed_appointment(df: DataFrame) -> Tuple[str, int]:
 ```
+
 - **Objective:** Find the single appointment with the longest recorded wait time.
 - **Transformation Steps:**
   1. Order records by `wait_minutes.desc()`, breaking ties by `appointment_id.asc()`.
@@ -121,9 +139,11 @@ def most_delayed_appointment(df: DataFrame) -> Tuple[str, int]:
 ---
 
 ### Function 7 — Average Wait by Department
+
 ```python
 def avg_wait_by_department(df: DataFrame) -> DataFrame:
 ```
+
 - **Objective:** Calculate the average patient wait duration across clinical specialties.
 - **Transformation Steps:**
   1. Group by `department`.
@@ -133,9 +153,11 @@ def avg_wait_by_department(df: DataFrame) -> DataFrame:
 ---
 
 ### Function 8 — Top N Patients by Wait
+
 ```python
 def top_n_patients_by_wait(df: DataFrame, n: int) -> DataFrame:
 ```
+
 - **Objective:** Identify the top $N$ patients experiencing the highest cumulative waiting times.
 - **Transformation Steps:**
   1. Group by `patient_id`.
@@ -147,9 +169,11 @@ def top_n_patients_by_wait(df: DataFrame, n: int) -> DataFrame:
 ---
 
 ### Function 9 — Wait Reason Counts
+
 ```python
 def wait_reason_counts(df: DataFrame) -> DataFrame:
 ```
+
 - **Objective:** Count the frequency distribution of documented delay reasons.
 - **Transformation Steps:**
   1. Group by `wait_reason`.
