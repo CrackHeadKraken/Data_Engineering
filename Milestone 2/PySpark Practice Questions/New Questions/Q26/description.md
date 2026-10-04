@@ -25,6 +25,7 @@ def define_run_schema() -> StructType:
 ```
 
 **Requirements:**
+
 - Return a `StructType` containing exactly these 8 nullable fields in order:
   1. `run_id` (`StringType`)
   2. `reactor_id` (`StringType`)
@@ -49,6 +50,7 @@ def load_bioreactor_data(
 ```
 
 **Requirements:**
+
 - **Runs DataFrame:**
   - Read with header enabled using the provided `schema`.
   - Convert `start_ts` and `end_ts` to `TimestampType` using `to_timestamp()`.
@@ -65,11 +67,13 @@ def compute_run_metrics(df: DataFrame) -> DataFrame:
 ```
 
 **Requirements:**
+
 - Compute:
   - `duration_minutes`:
     $$
     \text{duration\_minutes} = \frac{\text{unix\_timestamp}(\text{end\_ts}) - \text{unix\_timestamp}(\text{start\_ts})}{60}
     $$
+
     If negative, cap at `0.0`.
   - `yield_pct`:
     $$
@@ -89,6 +93,7 @@ def join_reactor_metadata(
 ```
 
 **Requirements:**
+
 - Perform an inner join on `reactor_id`.
 - Replace missing `facility` with `"Unknown"` using `coalesce`.
 - Create column `reactor_label`:
@@ -106,6 +111,7 @@ def dense_rank_runs_by_yield(df: DataFrame) -> DataFrame:
 ```
 
 **Requirements:**
+
 - Filter for runs where `run_status == "COMPLETED"` and `yield_pct` is not null.
 - Define a window partitioned by `process_type` and ordered by `yield_pct` descending.
 - Assign `yield_rank` using `dense_rank()`.

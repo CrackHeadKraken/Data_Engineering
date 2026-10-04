@@ -127,12 +127,17 @@ QUESTION_REF_MAP = {
     "Q27": "solution_Q27",
 }
 
+# Fallback configuration:
+#   False (Default) : STRICT MODE. Only functions you explicitly write are tested.
+#                     Missing/unwritten functions will be reported as missing.
+#   True            : INCREMENTAL MODE. Automatically injects reference implementations
+#                     for functions you haven't implemented yet.
+ENABLE_REFERENCE_FALLBACK = False
+
 # ========================================================================================
 # 2. MY PRACTICE WORKBENCH (Define your functions for the selected question here!)
 # ========================================================================================
 # Write your PySpark functions below. Any function you write here will be tested!
-# If you leave a function undefined, it will gracefully fall back to the reference solution
-# for your active question so you can build and test your solutions incrementally.
 
 # Example Starter Functions for Q401 (Retail Commerce Operations):
 
@@ -281,29 +286,79 @@ QUESTION_REF_MAP = {
 
 
 # def avg_wait_by_department(df: DataFrame) -> DataFrame:
-#     pass
+#     if "wait_minutes" not in df.columns:
+#             df =  append_wait_minutes(df)
+
+#     df1 = df.groupBy(f.col("department")).agg(f.avg(f.col("wait_minutes")).alias("avg_wait_minutes"))
+
+#     return df1.select("department","avg_wait_minutes")
+
+# def top_n_patients_by_wait(df: DataFrame, n: int) -> DataFrame:
+
+#     df2 = df.groupBy(f.col("patient_id")).agg(f.sum(f.col("wait_minutes")).alias("total_wait_minutes"))
+
+#     df3 = df2.orderBy(f.col("total_wait_minutes").desc(), f.col("patient_id").asc()).limit(n)
+
+#     return df3
 
 
+# def wait_reason_counts(df: DataFrame) -> DataFrame:
+
+#     df4 = df.groupBy(f.col("wait_reason")).count().withColumnRenamed("count", "reason_count")
+
+#     return df4
 
 
+### Practice 1 -  Q2 RePractice
+
+from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql import functions as f
+from pyspark.sql import types as t
+from pyspark.sql.window import Window as w
+from typing import Tuple, List
+
+def load_appointment_data(spark: SparkSession) -> DataFrame:
+    return spark.read.option("header",True).option("inferSchema",True).csv(r"C:\Users\Arnav\Desktop\L&T Milestone Prep\Milestone 2\PySpark Practice Questions\data\appointments.csv")
 
 
+def append_wait_minutes(df: DataFrame) -> DataFrame:
+    sc_time = f.unix_timestamp(f.col("scheduled_time"))
+    ac_time = f.unix_timestamp(f.col("actual_time"))
+    wait_minutes = f.floor((ac_time - sc_time)/ f.lit(60))
+    return df.withColumn("wait_minutes", wait_minutes.cast(t.IntegerType()))
 
 
+def get_long_wait_appointments(df: DataFrame, threshold_minutes: int) -> DataFrame:
+    if "wait_minutes" not in df.columns:
+        df = append_wait_minutes(df)
 
+    return df.filter(f.col("wait_minutes") > f.lit(threshold_minutes))    
 
+def most_delayed_doctor(df: DataFrame) -> DataFrame:
+    if "wait_minutes" not in df.columns:
+        df = append_wait_minutes(df)
 
+    df1 = df.groupBy(f.col("doctor")).agg(f.sum(f.col("wait_minutes")).alias("total_wait_minutes")).orderBy(f.col("total_wait_minutes").desc(), f.col("doctor").asc()).limit(1)
 
+    return df1
 
+def long_wait_percentage(df: DataFrame) -> float:
+    total_count = df.count()
+    df2 = df.filter(f.col("wait_minutes") > f.lit(30)).count()
+    long_wait_percentage = float((df2/total_count) * 100)
 
+    return long_wait_percentage
 
+def most_delayed_appointment(df: DataFrame) -> Tuple[str, int]:
+    if "wait_minutes" not in df.columns:
+        df = append_wait_minutes(df)
 
+    df3 = df.orderBy(f.col("wait_minutes").desc(), col("appointment_id").asc()).first()
 
+    if not df3:
+        return("", 0)
 
-
-
-
-
+    return (str(df3["appointment_id"]), int(df3["wait_minutes"]))
 
 
 
@@ -366,9 +421,8 @@ if ACTIVE_RAW in ["AUTO", "DETECT", "AUTOMATIC"]:
 else:
     ACTIVE_TARGET = ACTIVE_RAW
 
-# Inject reference solution functions for ACTIVE_TARGET for any functions not yet defined by user
-# (enables graceful fallback and incremental practice):
-if ACTIVE_TARGET in QUESTION_REF_MAP:
+# Inject reference solution functions for ACTIVE_TARGET ONLY IF explicitly enabled:
+if ENABLE_REFERENCE_FALLBACK and ACTIVE_TARGET in QUESTION_REF_MAP:
     import importlib
     ref_mod = importlib.import_module(QUESTION_REF_MAP[ACTIVE_TARGET])
     for attr in dir(ref_mod):
