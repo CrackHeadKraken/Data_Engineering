@@ -23,7 +23,15 @@ AVAILABLE QUESTION OPTIONS:
   - "AGRICULTURE"      : Precision Agriculture Field Inspection (6 tests)
   - "INSURANCE"        : Insurance Claims & Policy Insights (6 tests)
   - "TELECOM_RECHARGE" : Telecom Recharge Insights (6 tests)
-  - "ALL"              : Run complete test suite across all 10 questions (120 tests)
+  - "Q16"              : Digital Banking KYC Risk Insights (6 tests)
+  - "Q17"              : Emergency Triage Wait-Time Insights (6 tests)
+  - "Q18"              : Vaccine Batch Stability Insights (6 tests)
+  - "Q19"              : Music Streaming Release Insights (6 tests)
+  - "Q24"              : Merchant Settlement Risk Analytics (6 tests)
+  - "Q25"              : Remote Patient Monitoring Alert Analytics (6 tests)
+  - "Q26"              : Bioreactor Run Performance Analytics (6 tests)
+  - "Q27"              : Streaming Ad Campaign Performance Analytics (6 tests)
+  - "ALL"              : Run complete test suite across all 18 questions (168 tests)
 ========================================================================================
 """
 
@@ -85,7 +93,15 @@ from pyspark.sql.window import Window
 #   "AGRICULTURE"      : Precision Agriculture Field Inspection (6 tests)
 #   "INSURANCE"        : Insurance Claims & Policy Insights (6 tests)
 #   "TELECOM_RECHARGE" : Telecom Recharge Insights (6 tests)
-#   "ALL"              : Run complete test suite across all 10 questions (120 tests)
+#   "Q16"              : Digital Banking KYC Risk Insights (6 tests)
+#   "Q17"              : Emergency Triage Wait-Time Insights (6 tests)
+#   "Q18"              : Vaccine Batch Stability Insights (6 tests)
+#   "Q19"              : Music Streaming Release Insights (6 tests)
+#   "Q24"              : Merchant Settlement Risk Analytics (6 tests)
+#   "Q25"              : Remote Patient Monitoring Alert Analytics (6 tests)
+#   "Q26"              : Bioreactor Run Performance Analytics (6 tests)
+#   "Q27"              : Streaming Ad Campaign Performance Analytics (6 tests)
+#   "ALL"              : Run complete test suite across all 18 questions (168 tests)
 
 QUESTION = "AUTO"
 
@@ -101,6 +117,14 @@ QUESTION_REF_MAP = {
     "AGRICULTURE": "solution_Precision_Agriculture",
     "INSURANCE": "solution_Insurance_Claims",
     "TELECOM_RECHARGE": "solution_Telecom_Recharge",
+    "Q16": "solution_Q16",
+    "Q17": "solution_Q17",
+    "Q18": "solution_Q18",
+    "Q19": "solution_Q19",
+    "Q24": "solution_Q24",
+    "Q25": "solution_Q25",
+    "Q26": "solution_Q26",
+    "Q27": "solution_Q27",
 }
 
 # ========================================================================================
@@ -204,25 +228,128 @@ QUESTION_REF_MAP = {
 
 ### Practice 1 -  Q2
 
-from pyspark.sql import SparkSession, DataFrame
-from pyspark.sql import functions as f
-from pyspark.sql import types as t
-from pyspark.sql.window import Window as w
-from typing import Tuple, List
+# from pyspark.sql import SparkSession, DataFrame
+# from pyspark.sql import functions as f
+# from pyspark.sql import types as t
+# from pyspark.sql.window import Window as w
+# from typing import Tuple, List
 
-def load_appointment_data(spark: SparkSession) -> DataFrame:
-    return spark.read.option("header", True).option("inferSchema", True).csv(get_data_path("appointments.csv"))
+# def load_appointment_data(spark: SparkSession) -> DataFrame:
+#     return spark.read.option("header", True).option("inferSchema", True).csv(r"C:\Users\Arnav\Desktop\L&T Milestone Prep\Milestone 2\PySpark Practice Questions\data\appointments.csv")
 
-def append_wait_minutes(df: DataFrame) -> DataFrame:
-    sc_time = f.unix_timestamp(f.col("scheduled_time"))
-    ac_time = f.unix_timestamp(f.col("actual_time"))
-    wait_minutes = f.floor((ac_time - sc_time)/f.lit(60))
-    return df.withColumn("wait_minutes", wait_minutes.cast(t.IntegerType()))
 
-def get_long_wait_appointments(df: DataFrame, threshold_minutes: int) -> DataFrame:
-    if "wait_minutes" not in df.columns:
-        df = append_wait_minutes(df)
-    return df.filter(f.col("wait_minutes") > f.lit(threshold_minutes))
+# def append_wait_minutes(df: DataFrame) -> DataFrame:
+#     sc_time = f.unix_timestamp(f.col("scheduled_time"))
+#     ac_time = f.unix_timestamp(f.col("actual_time"))
+#     wait_minutes = f.floor((ac_time - sc_time)/f.lit(60))
+
+#     return df.withColumn("wait_minutes", wait_minutes.cast(t.IntegerType()))
+
+
+# def get_long_wait_appointments(df: DataFrame, threshold_minutes: int) -> DataFrame:
+#     if "wait_minutes" not in df.columns:
+#         df =  append_wait_minutes(df)
+#     return df.filter(f.col("wait_minutes") > f.lit(threshold_minutes))
+    
+# def most_delayed_doctor(df: DataFrame) -> DataFrame:
+#     if "wait_minutes" not in df.columns:
+#         df =  append_wait_minutes(df)
+    
+#     delay = df.groupBy(f.col("doctor")).agg(f.sum(f.col("wait_minutes")).alias("total_wait"))
+    
+#     return delay.orderBy(f.col("total_wait").desc(), f.col("doctor").asc()).limit(1).select("doctor", "total_wait")
+
+
+# def long_wait_percentage(df: DataFrame) -> float:
+
+#     total_count = df.count()
+#     count = df.filter(f.col("wait_minutes") > f.lit(30)).count()
+#     percentage = ((count/total_count) * 100)
+
+#     if total_count == 0:
+#         return 0.0
+#     return float(percentage)
+
+# def most_delayed_appointment(df: DataFrame) -> Tuple[str, int]:
+
+#     df1 = df.orderBy(f.col("wait_minutes").desc(), f.col("appointment_id").asc()).collect()
+
+#     if not df1:
+#         return ("", 0)
+
+#     return (str(df1[0]["appointment_id"]), int(df1[0]["wait_minutes"]))
+
+
+# def avg_wait_by_department(df: DataFrame) -> DataFrame:
+#     pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ### ========================================================================================================================
@@ -239,13 +366,13 @@ if ACTIVE_RAW in ["AUTO", "DETECT", "AUTOMATIC"]:
 else:
     ACTIVE_TARGET = ACTIVE_RAW
 
-# If running an automated test suite across questions other than the user's active practice session
-# (for example, when running 'ALL'), inject reference solution for those other questions:
-if ACTIVE_TARGET in QUESTION_REF_MAP and ACTIVE_TARGET != USER_PRACTICE_QUESTION:
+# Inject reference solution functions for ACTIVE_TARGET for any functions not yet defined by user
+# (enables graceful fallback and incremental practice):
+if ACTIVE_TARGET in QUESTION_REF_MAP:
     import importlib
     ref_mod = importlib.import_module(QUESTION_REF_MAP[ACTIVE_TARGET])
     for attr in dir(ref_mod):
-        if not attr.startswith("_"):
+        if not attr.startswith("_") and attr not in globals():
             globals()[attr] = getattr(ref_mod, attr)
 
 

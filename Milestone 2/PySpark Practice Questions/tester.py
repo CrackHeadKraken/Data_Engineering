@@ -26,6 +26,7 @@ from typing import Dict, List, Optional, Tuple
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 TESTS_DIR = os.path.join(ROOT_DIR, "Tests")
 QUESTIONS_DIR = os.path.join(ROOT_DIR, "Questions")
+NEW_QUESTIONS_DIR = os.path.join(ROOT_DIR, "New Questions")
 PYTHON_EXE = sys.executable
 # Auto-detect virtual environment python if current python interpreter lacks pyspark
 try:
@@ -117,6 +118,70 @@ QUESTION_REGISTRY = {
         "expected_tests": 40,
         "aliases": ["1000", "q1000", "smartcity", "mobility", "mega", "smartcity_mobility_mega_assessment"],
     },
+    "Q16": {
+        "id": "Q16",
+        "title": "Digital Banking KYC Risk Insights",
+        "test_file": os.path.join(TESTS_DIR, "test_Q16.py"),
+        "dir": os.path.join(NEW_QUESTIONS_DIR, "Q16"),
+        "expected_tests": 6,
+        "aliases": ["16", "q16", "kyc", "kyc_customers", "digital_banking"],
+    },
+    "Q17": {
+        "id": "Q17",
+        "title": "Emergency Triage Wait-Time Insights",
+        "test_file": os.path.join(TESTS_DIR, "test_Q17.py"),
+        "dir": os.path.join(NEW_QUESTIONS_DIR, "Q17"),
+        "expected_tests": 6,
+        "aliases": ["17", "q17", "triage", "emergency", "wait_time"],
+    },
+    "Q18": {
+        "id": "Q18",
+        "title": "Vaccine Batch Stability Insights",
+        "test_file": os.path.join(TESTS_DIR, "test_Q18.py"),
+        "dir": os.path.join(NEW_QUESTIONS_DIR, "Q18"),
+        "expected_tests": 6,
+        "aliases": ["18", "q18", "vaccine", "vaccine_batches", "stability"],
+    },
+    "Q19": {
+        "id": "Q19",
+        "title": "Music Streaming Release Insights",
+        "test_file": os.path.join(TESTS_DIR, "test_Q19.py"),
+        "dir": os.path.join(NEW_QUESTIONS_DIR, "Q19"),
+        "expected_tests": 6,
+        "aliases": ["19", "q19", "music", "music_tracks", "streaming"],
+    },
+    "Q24": {
+        "id": "Q24",
+        "title": "Merchant Settlement Risk Analytics",
+        "test_file": os.path.join(TESTS_DIR, "test_Q24.py"),
+        "dir": os.path.join(NEW_QUESTIONS_DIR, "Q24"),
+        "expected_tests": 6,
+        "aliases": ["24", "q24", "settlement", "settlements", "merchants"],
+    },
+    "Q25": {
+        "id": "Q25",
+        "title": "Remote Patient Monitoring Alert Analytics",
+        "test_file": os.path.join(TESTS_DIR, "test_Q25.py"),
+        "dir": os.path.join(NEW_QUESTIONS_DIR, "Q25"),
+        "expected_tests": 6,
+        "aliases": ["25", "q25", "monitoring", "patients", "observations", "alert"],
+    },
+    "Q26": {
+        "id": "Q26",
+        "title": "Bioreactor Run Performance Analytics",
+        "test_file": os.path.join(TESTS_DIR, "test_Q26.py"),
+        "dir": os.path.join(NEW_QUESTIONS_DIR, "Q26"),
+        "expected_tests": 6,
+        "aliases": ["26", "q26", "bioreactor", "reactors", "bioreactor_runs"],
+    },
+    "Q27": {
+        "id": "Q27",
+        "title": "Streaming Ad Campaign Performance Analytics",
+        "test_file": os.path.join(TESTS_DIR, "test_Q27.py"),
+        "dir": os.path.join(NEW_QUESTIONS_DIR, "Q27"),
+        "expected_tests": 6,
+        "aliases": ["27", "q27", "ad", "impressions", "campaigns", "ad_impressions"],
+    },
 }
 
 # Terminal formatting
@@ -179,7 +244,15 @@ def detect_question_from_source(
         "MUSEUM": "solution_Museum_Artifact.py",
         "AGRICULTURE": "solution_Precision_Agriculture.py",
         "INSURANCE": "solution_Insurance_Claims.py",
-        "TELECOM_RECHARGE": "solution_Telecom_Recharge.py"
+        "TELECOM_RECHARGE": "solution_Telecom_Recharge.py",
+        "Q16": "solution_Q16.py",
+        "Q17": "solution_Q17.py",
+        "Q18": "solution_Q18.py",
+        "Q19": "solution_Q19.py",
+        "Q24": "solution_Q24.py",
+        "Q25": "solution_Q25.py",
+        "Q26": "solution_Q26.py",
+        "Q27": "solution_Q27.py",
     }
 
     question_funcs = {}
@@ -217,6 +290,14 @@ def detect_question_from_source(
                 "AGRICULTURE": ["field", "moisture", "crop", "inspection"],
                 "INSURANCE": ["claim", "policy", "claim_amount"],
                 "TELECOM_RECHARGE": ["recharge", "payment_mode", "topup"],
+                "Q16": ["kyc", "customer", "onboarding_date", "risk_score"],
+                "Q17": ["triage", "arrival_time", "doctor_start_time", "priority"],
+                "Q18": ["vaccine", "potency", "expiry_date", "manufacture_date"],
+                "Q19": ["track", "genre", "stream_count", "artist"],
+                "Q24": ["settlement", "merchant", "gross_amount", "fee_amount"],
+                "Q25": ["observation", "systolic", "heart_rate", "care_team"],
+                "Q26": ["bioreactor", "reactor", "process_type", "yield_pct"],
+                "Q27": ["impression", "campaign", "ad_length", "watch_pct"],
             }
             code_lower = source_code.lower()
             for kw in bonus_keywords.get(qkey, []):
