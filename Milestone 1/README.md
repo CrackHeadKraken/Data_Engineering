@@ -10,6 +10,8 @@ Comprehensive preparation material, practical questions, automated unit tests, r
 Milestone 1/
 ├── Milestone 1 Portion/              # Syllabus breakdown & exam planning roadmap
 ├── Milestone 1 Questions/            # Official question PDFs and Word documents
+│   ├── Python/                       # Python problem sets, sample tests, and solutions
+│   └── SQL/                          # SQL scenario-based problem docs & PDFs
 ├── Python Practice/                  # Python OOPs, Pandas, NumPy practice and automated tests
 │   ├── Python Milestone Practice.py  # Interactive student practice workspace with auto-test runner hook
 │   ├── Python Practice Material/     # Core learning materials & cheat sheets
