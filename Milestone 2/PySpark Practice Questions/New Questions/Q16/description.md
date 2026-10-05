@@ -24,6 +24,7 @@ Implement five independent PySpark functions according to the specifications bel
 **Path:** `data/kyc_customers.csv`
 
 **Columns:**
+
 - `customer_id`
 - `customer_name`
 - `email`
@@ -43,6 +44,7 @@ def load_kyc_data(spark: SparkSession, path: str) -> DataFrame:
 ```
 
 **Requirements:**
+
 - Read the CSV with header enabled.
 - Infer the schema.
 - Convert `onboarding_date` to `DateType`.
@@ -57,6 +59,7 @@ def remove_invalid_emails(df: DataFrame) -> DataFrame:
 ```
 
 **Requirements:**
+
 - Remove records where `email` is null.
 - Apply `trim()` to the `email` column.
 - Remove blank email values.
@@ -74,6 +77,7 @@ def filter_review_customers(df: DataFrame, min_score: int, max_score: int) -> Da
 ```
 
 **Requirements:**
+
 - Keep customers where:
   - `risk_score` is between `min_score` and `max_score` inclusive.
   - and `kyc_status` is either `"PENDING"` or `"REVIEW"`.
@@ -88,6 +92,7 @@ def risk_score_statistics(df: DataFrame) -> dict:
 ```
 
 **Requirements:**
+
 - Ignore null `risk_score` values.
 - Compute and return a Python dictionary with the following keys:
   ```python
@@ -108,6 +113,7 @@ def city_highest_average_risk(df: DataFrame) -> Tuple[str, float]:
 ```
 
 **Requirements:**
+
 - Ignore rows with null `city` or null `risk_score`.
 - Group by `city` and calculate the average `risk_score`.
 - Sort by average risk descending, and `city` ascending.

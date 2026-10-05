@@ -309,66 +309,80 @@ ENABLE_REFERENCE_FALLBACK = False
 #     return df4
 
 
-### Practice 1 -  Q2 RePractice
+# ### Practice 1 -  Q2 RePractice
 
-from pyspark.sql import SparkSession, DataFrame
-from pyspark.sql import functions as f
-from pyspark.sql import types as t
-from pyspark.sql.window import Window as w
-from typing import Tuple, List
+# from pyspark.sql import SparkSession, DataFrame
+# from pyspark.sql import functions as f
+# from pyspark.sql import types as t
+# from pyspark.sql.window import Window as w
+# from typing import Tuple, List
 
-def load_appointment_data(spark: SparkSession) -> DataFrame:
-    return spark.read.option("header",True).option("inferSchema",True).csv(r"C:\Users\Arnav\Desktop\L&T Milestone Prep\Milestone 2\PySpark Practice Questions\data\appointments.csv")
-
-
-def append_wait_minutes(df: DataFrame) -> DataFrame:
-    sc_time = f.unix_timestamp(f.col("scheduled_time"))
-    ac_time = f.unix_timestamp(f.col("actual_time"))
-    wait_minutes = f.floor((ac_time - sc_time)/ f.lit(60))
-    return df.withColumn("wait_minutes", wait_minutes.cast(t.IntegerType()))
+# def load_appointment_data(spark: SparkSession) -> DataFrame:
+#     return spark.read.option("header",True).option("inferSchema",True).csv(r"C:\Users\Arnav\Desktop\L&T Milestone Prep\Milestone 2\PySpark Practice Questions\data\appointments.csv")
 
 
-def get_long_wait_appointments(df: DataFrame, threshold_minutes: int) -> DataFrame:
-    if "wait_minutes" not in df.columns:
-        df = append_wait_minutes(df)
+# def append_wait_minutes(df: DataFrame) -> DataFrame:
+#     sc_time = f.unix_timestamp(f.col("scheduled_time"))
+#     ac_time = f.unix_timestamp(f.col("actual_time"))
+#     wait = f.floor((ac_time - sc_time)/ f.lit(60))
+#     return df.withColumn("wait_minutes", wait.cast(t.IntegerType()))
 
-    return df.filter(f.col("wait_minutes") > f.lit(threshold_minutes))    
+# def get_long_wait_appointments(df: DataFrame, threshold_minutes: int) -> DataFrame:
+#     if "wait_minutes" not in df.columns:
+#         df = append_wait_minutes(df)
 
-def most_delayed_doctor(df: DataFrame) -> DataFrame:
-    if "wait_minutes" not in df.columns:
-        df = append_wait_minutes(df)
+#     return df.filter(f.col("wait_minutes") > f.lit(threshold_minutes))    
 
-    df1 = df.groupBy(f.col("doctor")).agg(f.sum(f.col("wait_minutes")).alias("total_wait_minutes")).orderBy(f.col("total_wait_minutes").desc(), f.col("doctor").asc()).limit(1)
+# def most_delayed_doctor(df: DataFrame) -> DataFrame:
+#     if "wait_minutes" not in df.columns:
+#         df = append_wait_minutes(df)
 
-    return df1
+#     df1 = df.groupBy(f.col("doctor")).agg(f.sum(f.col("wait_minutes")).alias("total_wait")).orderBy(f.col("total_wait").desc(), f.col("doctor").asc()).limit(1)
 
-def long_wait_percentage(df: DataFrame) -> float:
-    total_count = df.count()
-    df2 = df.filter(f.col("wait_minutes") > f.lit(30)).count()
-    long_wait_percentage = float((df2/total_count) * 100)
+#     return df1
 
-    return long_wait_percentage
+# def long_wait_percentage(df: DataFrame) -> float:
+#     total_count = df.count()
+#     df2 = df.filter(f.col("wait_minutes") > f.lit(30)).count()
+#     long_wait_percentage = float((df2/total_count) * 100)
 
-def most_delayed_appointment(df: DataFrame) -> Tuple[str, int]:
-    if "wait_minutes" not in df.columns:
-        df = append_wait_minutes(df)
+#     return long_wait_percentage
 
-    df3 = df.orderBy(f.col("wait_minutes").desc(), col("appointment_id").asc()).first()
+# def most_delayed_appointment(df: DataFrame) -> Tuple[str, int]:
+#     if "wait_minutes" not in df.columns:
+#         df = append_wait_minutes(df)
 
-    if not df3:
-        return("", 0)
+#     df3 = df.orderBy(f.col("wait_minutes").desc()).limit(1).collect()
 
-    return (str(df3["appointment_id"]), int(df3["wait_minutes"]))
+#     if not df3:
+#         return ("", 0)
 
-
-
-
-
-
-
-
+#     return (str(df3[0]["appointment_id"]),int(df3[0]["wait_minutes"]))
 
 
+# def avg_wait_by_department(df: DataFrame) -> DataFrame:
+
+#     df4 = df.groupBy(f.col("department")).agg(f.avg("wait_minutes").alias("avg_wait_minutes"))
+#     return df4
+
+
+# def top_n_patients_by_wait(df: DataFrame, n: int) -> DataFrame:
+
+#     df5 = df.groupBy(f.col("patient_id")).agg(f.sum(f.col("wait_minutes")).alias("total_wait_minutes")).orderBy(f.col("total_wait_minutes").desc(), f.col("patient_id").asc()).limit(n)
+
+#     return df5.select("patient_id","total_wait_minutes")
+
+# def wait_reason_counts(df: DataFrame) -> DataFrame:
+
+#     df6 = df.groupBy(f.col("wait_reason")).count().withColumnRenamed("count", "reason_count")
+
+#     return df6
+
+
+### Practice 1 - NEW QUESTIONS Q16
+
+def load_kyc_data(spark: SparkSession, path: str) -> DataFrame:
+    pass
 
 
 
